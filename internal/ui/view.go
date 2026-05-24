@@ -2,12 +2,58 @@ package ui
 
 import (
 	"fmt"
+	"strconv"
 	"sort"
 	"strings"
 
 	"github.com/charmbracelet/lipgloss"
 	"github.com/fselich/dossier/internal/openspec"
 )
+
+func (m *Model) renderWithBackground(content string) string {
+	if _, ok := m.theme.ViewBg.(lipgloss.NoColor); ok {
+		return content
+	}
+	if m.theme.ViewBg == nil {
+		return content
+	}
+
+	bgStyle := lipgloss.NewStyle().
+		Background(m.theme.ViewBg).
+		Width(m.width).
+		Height(m.height)
+
+	wrapped := bgStyle.Render(content)
+
+	restore := bgSGRRestore(m.theme.ViewBg)
+	if restore == "" {
+		return wrapped
+	}
+
+	return strings.ReplaceAll(wrapped, "\033[0m", "\033["+restore+"m")
+}
+
+func bgSGRRestore(c lipgloss.TerminalColor) string {
+	switch v := c.(type) {
+	case lipgloss.NoColor:
+		return ""
+	case lipgloss.Color:
+		s := string(v)
+		if s == "" {
+			return ""
+		}
+		if _, err := strconv.Atoi(s); err == nil {
+			return "0;48;5;" + s
+		}
+		if strings.HasPrefix(s, "#") && len(s) == 7 {
+			r, _ := strconv.ParseInt(s[1:3], 16, 32)
+			g, _ := strconv.ParseInt(s[3:5], 16, 32)
+			b, _ := strconv.ParseInt(s[5:7], 16, 32)
+			return fmt.Sprintf("0;48;2;%d;%d;%d", r, g, b)
+		}
+	}
+	return ""
+}
 
 func (m Model) View() string {
 	if !m.vpReady {
@@ -20,7 +66,7 @@ func (m Model) View() string {
 		return m.viewIndex()
 	}
 	if len(m.project.Changes) == 0 && m.mode == ModeNormal {
-		return m.emptyView()
+		return m.renderWithBackground(m.emptyView())
 	}
 	rows := []string{
 		m.boxTop(),
@@ -37,7 +83,7 @@ func (m Model) View() string {
 		m.addBorderSides(m.renderHelpBar()),
 		m.boxBottom(),
 	)
-	return strings.Join(rows, "\n")
+	return m.renderWithBackground(strings.Join(rows, "\n"))
 }
 
 func (m *Model) viewIndex() string {
@@ -50,7 +96,7 @@ func (m *Model) viewIndex() string {
 		m.addBorderSides(m.renderHelpBar()),
 		m.boxBottom(),
 	}
-	return strings.Join(rows, "\n")
+	return m.renderWithBackground(strings.Join(rows, "\n"))
 }
 
 func (m *Model) renderHeader() string {
@@ -236,7 +282,7 @@ func (m *Model) viewConfig() string {
 		m.addBorderSides(m.renderHelpBar()),
 		m.boxBottom(),
 	}
-	return strings.Join(rows, "\n")
+	return m.renderWithBackground(strings.Join(rows, "\n"))
 }
 
 func configToMarkdown(cfg openspec.ProjectConfig) string {

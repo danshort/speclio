@@ -7,6 +7,7 @@ import (
 
 	"github.com/charmbracelet/bubbles/viewport"
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/lipgloss"
 	"github.com/fselich/dossier/internal/openspec"
 )
 
@@ -69,6 +70,10 @@ type indexItem struct {
 	reqIdx int // index into projectSpecs[idx].RequirementNames; only used for indexKindRequirement
 }
 
+type Theme struct {
+	ViewBg lipgloss.TerminalColor
+}
+
 type Model struct {
 	project   *openspec.Project
 	changeIdx int
@@ -105,10 +110,16 @@ type Model struct {
 	specFocusMode    bool   // true when ModeViewingSpec shows only the selected requirement
 	specReqCursor    int    // index into projectSpecs[specViewerCursor].RequirementNames in focus mode
 	projectConfig    openspec.ProjectConfig
+	theme            Theme
 }
 
 func New(project *openspec.Project, cfg openspec.ProjectConfig) Model {
-	m := Model{project: project, renderCache: make(map[Tab]string), projectConfig: cfg}
+	m := Model{
+		project:     project,
+		renderCache: make(map[Tab]string),
+		projectConfig: cfg,
+		theme:          Theme{ViewBg: lipgloss.NoColor{}},
+	}
 	if len(project.Changes) > 0 {
 		m.tab = m.defaultTab()
 		m.loadTaskItems()
