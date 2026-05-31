@@ -2,6 +2,20 @@
 
 # Changelog
 
+## v0.13.0
+
+### Internal
+- Split the monolithic `handleKeyPress()` into per-mode update functions, each in its own file: `viewer.go`, `index.go`, `spec.go`, `config.go`. `update.go` is now a thin dispatcher.
+- Introduced a `fileSystem` interface and `Loader` struct in `openspec`, so the package no longer depends on `os` directly. All public functions preserved via backward-compatible wrappers.
+- Added `.golangci.yml` with errcheck, staticcheck, govet, unused, gofmt, goimports, and a `Makefile` with `test`, `lint`, and `fmt` targets.
+- Eliminated all silent `log.Printf` error calls. Archive and spec load errors are now displayed in the help bar for 3 seconds via `m.errMsg`, exactly like toggle errors.
+
+### Changed
+- Tab bar `parts` slice is now preallocated to exactly 4 entries, and the tasks `items` slice preallocates to the line count. Everything is now 3 nanoseconds faster. Totally worth the token spend.
+- The `taskCounts` function no longer uses naked returns (which were confusing to anyone who scrolled past line 491 of index.go).
+- Layout constants (`chromeTop`, `chromeHeader`, etc.) replace magic numbers in `contentHeight()`. Now you know why it was subtracting 6.
+- The reload-merge logic that was copy-pasted in two places is now a single `mergeReloadedChange()` method. DRY*2.
+
 ## v0.12.0
 
 ### Fixed

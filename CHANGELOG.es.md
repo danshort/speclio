@@ -2,6 +2,20 @@
 
 # Changelog
 
+## v0.13.0
+
+### Interno
+- Partido el monolito `handleKeyPress()` en funciones `update*()` por modo, cada una en su propio archivo: `viewer.go`, `index.go`, `spec.go`, `config.go`. `update.go` ahora es un simple despachador. 
+- Introducida una interfaz `fileSystem` y un struct `Loader` en `openspec`, así el paquete ya no depende directamente de `os`. Todas las funciones públicas se conservan mediante wrappers compatibles hacia atrás. 
+- Añadido `.golangci.yml` con errcheck, staticcheck, govet, unused, gofmt, goimports, y un `Makefile` con objetivos `test`, `lint` y `fmt`. 
+- Eliminadas todas las llamadas silenciosas a `log.Printf`. Los errores de carga de archivos y specs ahora se muestran en la barra de ayuda durante 3 segundos mediante `m.errMsg`, exactamente igual que los errores de toggle. 
+
+### Cambiado
+- El slice `parts` de la barra de pestañas ahora se preasigna a exactamente 4 entradas, y el slice `items` de tareas se preasigna al número de líneas. Ahora todo va 3 nanosegundos más rápido. Ha merecido la pena el gasto de tokens.
+- La función `taskCounts` ya no usa naked returns (que confundían a cualquiera que se desplazase más allá de la línea 491 de index.go).
+- Las constantes de layout (`chromeTop`, `chromeHeader`, etc.) reemplazan a los números mágicos en `contentHeight()`. Ahora sabes por qué restaba 6.
+- La lógica de recarga que estaba copiada y pegada en dos sitios ahora es un único método `mergeReloadedChange()`. DRY*2.
+
 ## v0.12.0
 
 ### Arreglado
