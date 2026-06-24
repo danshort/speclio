@@ -45,6 +45,9 @@ make install  # instala mediante go install
 go install github.com/danshort/speclio/cmd/speclio@latest
 ```
 
+¿Quieres trabajar en speclio? Consulta [DEVELOPING.md](DEVELOPING.md) para compilar
+y ejecutar una versión de desarrollo junto a tu copia instalada.
+
 ---
 
 ## Uso

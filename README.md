@@ -45,6 +45,9 @@ make install  # installs via go install
 go install github.com/danshort/speclio/cmd/speclio@latest
 ```
 
+Hacking on speclio itself? See [DEVELOPING.md](DEVELOPING.md) for building and
+running a dev version alongside your installed copy.
+
 ---
 
 ## Usage

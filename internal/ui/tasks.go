@@ -77,7 +77,7 @@ var (
 	rxBold = regexp.MustCompile(`\*\*(.+?)\*\*`)
 
 	underlineStyle = lipgloss.NewStyle().Underline(true)
-	doneCodeStyle  = lipgloss.NewStyle().Underline(true).Foreground(lipgloss.Color("8"))
+	doneCodeStyle  = lipgloss.NewStyle().Underline(true).Foreground(dimColor)
 	boldStyle      = lipgloss.NewStyle().Bold(true)
 	cyanStyle      = lipgloss.NewStyle().Foreground(lipgloss.Color("6"))
 )

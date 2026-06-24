@@ -87,7 +87,9 @@ func (m Model) updateViewer(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 		}
 
 	case "j", "down":
-		if m.tab == TabTasks {
+		// The interactive task cursor only exists in normal mode; archived
+		// changes render tasks as read-only markdown, so scroll instead.
+		if m.tab == TabTasks && m.mode == ModeNormal {
 			m.moveCursorDown()
 			m.refreshTasksViewport()
 		} else {
@@ -95,7 +97,7 @@ func (m Model) updateViewer(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 		}
 
 	case "k", "up":
-		if m.tab == TabTasks {
+		if m.tab == TabTasks && m.mode == ModeNormal {
 			m.moveCursorUp()
 			m.refreshTasksViewport()
 		} else {
@@ -103,7 +105,7 @@ func (m Model) updateViewer(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 		}
 
 	case "space":
-		if m.tab == TabTasks {
+		if m.tab == TabTasks && m.mode == ModeNormal {
 			return m, m.doToggle()
 		}
 

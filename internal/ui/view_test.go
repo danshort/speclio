@@ -266,6 +266,47 @@ func TestUpdateKeyPresses(t *testing.T) {
 	})
 }
 
+// Regression for #7: on an archived change the Tasks tab is read-only markdown,
+// not the interactive task list. Pressing down/up must scroll the viewport, not
+// drive the task cursor (which re-renders from unpopulated items and blanks the
+// view). The cursor must stay put in archive mode.
+func TestArchiveTasksTabArrowDoesNotMoveCursor(t *testing.T) {
+	newModel := func() Model {
+		m := Model{
+			mode:   ModeViewingArchive,
+			tab:    TabTasks,
+			width:  80,
+			height: 24,
+			tasks: taskState{
+				Items: []openspec.TaskItem{
+					{Kind: openspec.KindTask, Text: "first"},
+					{Kind: openspec.KindTask, Text: "second"},
+				},
+				Cursor: 0,
+			},
+		}
+		m.vp = viewport.New(viewport.WithWidth(78), viewport.WithHeight(20))
+		return m
+	}
+
+	t.Run("down keeps cursor", func(t *testing.T) {
+		m := newModel()
+		result, _ := m.dispatchKey(tea.KeyPressMsg{Text: "j"})
+		if got := result.(Model).tasks.Cursor; got != 0 {
+			t.Errorf("expected task cursor to stay 0 in archive mode, got %d", got)
+		}
+	})
+
+	t.Run("up keeps cursor", func(t *testing.T) {
+		m := newModel()
+		m.tasks.Cursor = 1
+		result, _ := m.dispatchKey(tea.KeyPressMsg{Text: "k"})
+		if got := result.(Model).tasks.Cursor; got != 1 {
+			t.Errorf("expected task cursor to stay 1 in archive mode, got %d", got)
+		}
+	})
+}
+
 func TestMoveCursorOnSections(t *testing.T) {
 	t.Run("moveCursorUp goes to section header", func(t *testing.T) {
 		m := &Model{

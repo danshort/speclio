@@ -34,14 +34,19 @@ var (
 				Bold(true).
 				Foreground(lipgloss.Color("15"))
 
+	// dimColor is the "minimized"/secondary text color. ANSI 8 (bright black)
+	// renders too dark to read on most terminals; 245 is a mid-gray that stays
+	// clearly secondary to primary text (7/15) while remaining legible.
+	dimColor = lipgloss.Color("245")
+
 	taskDoneStyle = lipgloss.NewStyle().
-			Foreground(lipgloss.Color("8"))
+			Foreground(dimColor)
 
 	taskPendingStyle = lipgloss.NewStyle().
 				Foreground(lipgloss.Color("7"))
 
 	helpStyle = lipgloss.NewStyle().
-			Foreground(lipgloss.Color("8"))
+			Foreground(dimColor)
 
 	errStyle = lipgloss.NewStyle().
 			Foreground(lipgloss.Color("9")).
