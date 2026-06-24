@@ -75,6 +75,8 @@ speclio /ruta/a/openspec/changes/mi-cambio
 | `2` | Pestaña de diseño |
 | `3` | Pestaña de specs (pulsando de nuevo se cicla entre varios archivos) |
 | `4` | Pestaña de tareas |
+| `Tab` / `Shift+Tab` | Pestaña siguiente / anterior |
+| `←` / `→` | Pestaña anterior / siguiente (equivale a `Shift+Tab` / `Tab`) |
 | `j` / `↓` | Desplazar hacia abajo (o mover cursor de tareas hacia abajo) |
 | `k` / `↑` | Desplazar hacia arriba (o mover cursor de tareas hacia arriba) |
 | `Space` | Alternar tarea bajo el cursor (solo en pestaña de tareas) |

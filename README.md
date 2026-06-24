@@ -75,6 +75,8 @@ speclio /path/to/openspec/changes/my-change
 | `2` | Design tab |
 | `3` | Specs tab (press again to cycle through multiple spec files) |
 | `4` | Tasks tab |
+| `Tab` / `Shift+Tab` | Next / previous tab |
+| `←` / `→` | Previous / next tab (mirrors `Shift+Tab` / `Tab`) |
 | `j` / `down` | Scroll down (or move task cursor down) |
 | `k` / `up` | Scroll up (or move task cursor up) |
 | `Space` | Toggle task under cursor (tasks tab only) |

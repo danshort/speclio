@@ -73,13 +73,15 @@ func (m Model) updateViewer(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 			return m.commitStateChange()
 		}
 
-	case "tab":
+	case "tab", "right":
+		// Right arrow mirrors Tab as secondary tab navigation.
 		nxt := m.nextAvailableTab(m.tab, 1)
 		if nxt != m.tab {
 			m.tab = nxt
 			return m.commitStateChange()
 		}
-	case "shift+tab":
+	case "shift+tab", "left":
+		// Left arrow mirrors Shift+Tab as secondary tab navigation.
 		prv := m.nextAvailableTab(m.tab, -1)
 		if prv != m.tab {
 			m.tab = prv

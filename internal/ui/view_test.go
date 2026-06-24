@@ -348,6 +348,51 @@ func TestIndexValidationMarker(t *testing.T) {
 	})
 }
 
+func TestArrowKeyTabNavigation(t *testing.T) {
+	// proposal + specs available, design + tasks absent → arrows skip disabled.
+	newModel := func(startTab Tab) Model {
+		m := Model{
+			mode:      ModeNormal,
+			width:     80,
+			height:    24,
+			tab:       startTab,
+			changeIdx: 0,
+			project: &openspec.Project{Changes: []openspec.Change{{
+				Name:     "feat",
+				Proposal: openspec.Artifact{Present: true},
+				Specs:    openspec.Artifact{Present: true},
+			}}},
+		}
+		m.vp = viewport.New(viewport.WithWidth(78), viewport.WithHeight(20))
+		return m
+	}
+
+	t.Run("right advances to next available tab", func(t *testing.T) {
+		m := newModel(TabProposal)
+		result, _ := m.dispatchKey(tea.KeyPressMsg{Code: tea.KeyRight})
+		if got := result.(Model).tab; got != TabSpecs {
+			t.Errorf("expected → to move proposal→specs (skipping disabled), got tab %d", got)
+		}
+	})
+
+	t.Run("left goes to previous available tab", func(t *testing.T) {
+		m := newModel(TabSpecs)
+		result, _ := m.dispatchKey(tea.KeyPressMsg{Code: tea.KeyLeft})
+		if got := result.(Model).tab; got != TabProposal {
+			t.Errorf("expected ← to move specs→proposal (skipping disabled), got tab %d", got)
+		}
+	})
+
+	t.Run("h/l still navigate changes, not tabs", func(t *testing.T) {
+		// Single change: l wraps to same change and must not change the tab.
+		m := newModel(TabProposal)
+		result, _ := m.dispatchKey(tea.KeyPressMsg{Text: "l"})
+		if got := result.(Model).tab; got != TabProposal {
+			t.Errorf("expected l to leave tab unchanged, got tab %d", got)
+		}
+	})
+}
+
 func TestMoveCursorOnSections(t *testing.T) {
 	t.Run("moveCursorUp goes to section header", func(t *testing.T) {
 		m := &Model{
