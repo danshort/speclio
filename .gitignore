@@ -3,3 +3,7 @@
 /sv
 /dist
 .claude/
+
+# editor swap files
+*.swp
+*.swo
