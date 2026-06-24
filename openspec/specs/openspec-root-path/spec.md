@@ -3,7 +3,7 @@
 ## Purpose
 All public loader functions in `internal/openspec` accept an explicit root path parameter, decoupling them from `os.Getwd()` and enabling testability without global state manipulation.
 
-## ADDED Requirements
+## Requirements
 
 ### Requirement: Load project from explicit root path
 The loader SHALL expose a `LoadFrom(root string) (*Project, error)` function that loads the openspec project structure from the given root directory path. It SHALL behave identically to `Load()` but use `root` instead of `os.Getwd()`.
