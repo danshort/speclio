@@ -5,8 +5,8 @@ import (
 	"os"
 
 	tea "charm.land/bubbletea/v2"
-	"github.com/fselich/dossier/internal/openspec"
-	"github.com/fselich/dossier/internal/ui"
+	"github.com/danshort/dossier/internal/openspec"
+	"github.com/danshort/dossier/internal/ui"
 )
 
 var version string

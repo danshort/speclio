@@ -8,7 +8,7 @@ import (
 
 	tea "charm.land/bubbletea/v2"
 	"charm.land/lipgloss/v2"
-	"github.com/fselich/dossier/internal/openspec"
+	"github.com/danshort/dossier/internal/openspec"
 )
 
 func (m *Model) refreshTasksViewport() {

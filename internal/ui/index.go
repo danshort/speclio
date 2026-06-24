@@ -8,7 +8,7 @@ import (
 	"strings"
 
 	tea "charm.land/bubbletea/v2"
-	"github.com/fselich/dossier/internal/openspec"
+	"github.com/danshort/dossier/internal/openspec"
 )
 
 func (m *Model) handleTick() tea.Cmd {

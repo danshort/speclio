@@ -8,11 +8,12 @@ before:
 
 builds:
   -
-    id: dossier-linux
+    id: dossier
     main: ./cmd/dossier/main.go
     binary: dossier
     goos:
       - linux
+      - darwin
     goarch:
       - amd64
       - arm64
@@ -25,9 +26,9 @@ builds:
 archives:
   -
     id: dossier-archive
-    builds: [dossier-linux]
+    ids: [dossier]
     name_template: "{{ .ProjectName }}-{{ .Os }}-{{ .Arch }}"
-    format: tar.gz
+    formats: [tar.gz]
     files:
       - LICENSE
       - README.md
@@ -41,7 +42,7 @@ checksum:
 
 release:
   github:
-    owner: fselich
+    owner: danshort
     name: dossier
   name_template: "v{{ .Version }}"
   draft: false
@@ -51,17 +52,17 @@ release:
 brews:
   -
     name: dossier
-    homepage: https://github.com/fselich/dossier
+    homepage: https://github.com/danshort/dossier
     description: "Keyboard-driven TUI for navigating OpenSpec project artifacts"
     license: MIT
     repository:
-      owner: fselich
+      owner: danshort
       name: homebrew-tap
       token: "{{ .Env.HOMEBREW_TAP_TOKEN }}"
     install: |
       bin.install "dossier"
     test: |
-      system "#{bin}/dossier", "--help"
+      system "#{bin}/dossier", "--version"
 
 snapshot:
-  name_template: "{{ incpatch .Version }}-next"
+  version_template: "{{ incpatch .Version }}-next"

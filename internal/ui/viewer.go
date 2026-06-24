@@ -3,6 +3,7 @@ package ui
 import (
 	"os"
 	"os/exec"
+	"strings"
 
 	tea "charm.land/bubbletea/v2"
 )
@@ -110,11 +111,16 @@ func (m Model) updateViewer(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 		if m.tabAvailable(m.tab) {
 			path := m.artifactPath()
 			if path != "" {
-				editor := os.Getenv("EDITOR")
-				if editor == "" {
-					editor = "vi"
+				// Split EDITOR so values like "code --wait" or "emacs -nw" work.
+				fields := strings.Fields(os.Getenv("EDITOR"))
+				if len(fields) == 0 {
+					fields = []string{"vi"}
 				}
-				cmd := exec.Command(editor, path)
+				args := append(fields[1:], path)
+				// #nosec G204 G702 -- by design: opens the user's own $EDITOR on a file
+				// in their own project. No shell is invoked (exec.Command does not
+				// interpret shell metacharacters), so this is not command injection.
+				cmd := exec.Command(fields[0], args...)
 				return m, tea.ExecProcess(cmd, func(err error) tea.Msg {
 					return editorReturnMsg{}
 				})

@@ -29,17 +29,17 @@ A keyboard-driven terminal UI for reading and navigating [OpenSpec](https://gith
 
 ```bash
 # Homebrew
-brew tap fselich/tap
+brew tap danshort/tap
 brew install dossier
 
 # From source
-git clone https://github.com/fselich/dossier
+git clone https://github.com/danshort/dossier
 cd dossier
 make build    # produces ./dossier
 make install  # installs via go install
 
 # Using go install
-go install github.com/fselich/dossier/cmd/dossier@latest
+go install github.com/danshort/dossier/cmd/dossier@latest
 ```
 
 ---

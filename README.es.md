@@ -29,17 +29,17 @@ Interfaz de terminal controlada por teclado para leer y navegar artefactos de pr
 
 ```bash
 # Homebrew
-brew tap fselich/tap
+brew tap danshort/tap
 brew install dossier
 
 # Desde el código fuente
-git clone https://github.com/fselich/dossier
+git clone https://github.com/danshort/dossier
 cd dossier
 make build    # genera ./dossier
 make install  # instala mediante go install
 
 # Usando go install
-go install github.com/fselich/dossier/cmd/dossier@latest
+go install github.com/danshort/dossier/cmd/dossier@latest
 ```
 
 ---
