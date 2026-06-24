@@ -2,10 +2,7 @@
 
 ## Purpose
 Defines the layout and main behavior of the TUI: screen structure with borders and fixed zones, navigation between changes and tabs, markdown rendering with glamour, periodic polling for disk changes, and a welcome screen when there are no active changes.
-
 ## Requirements
-
-
 ### Requirement: Layout del TUI
 The TUI SHALL divide the screen into fixed zones separated by horizontal lines: header (1 line), separator (1 line), tab bar (1 line), separator (1 line), content area (remainder), separator (1 line), help bar (1 line). In the `tasks` tab, a global progress bar is also added between the content area and the bottom separator. The header SHALL show `<project> · <change-name> [N/M]` where N is the position of the current change and M is the total number of active changes. The `View()` method SHALL return a `tea.View` struct with `AltScreen = true` and `BackgroundColor` set to the configured theme background color, instead of manually filling the background with padding.
 
@@ -49,7 +46,7 @@ The TUI SHALL allow navigating between active changes with `h` (previous) and `l
 - **THEN** the TUI exits
 
 ### Requirement: Tabs de artifact
-The TUI SHALL show a tab bar with tabs `proposal`, `design`, `tasks`, `specs`. Tabs for absent artifacts SHALL be shown visually disabled and not selectable. The user SHALL be able to change tabs with keys `1`, `2`, `3`, `4`, with `Tab` (next available) and `Shift+Tab` (previous available), or by left-clicking on the tab label with the mouse. `Tab` and `Shift+Tab` SHALL skip disabled tabs and wrap around at the ends. The `3` key SHALL have dual behavior: if the active tab is not `specs`, it switches to it; if it is already `specs`, it cycles to the next available spec. If an absent artifact appears on disk during the session, the corresponding tab SHALL be enabled without needing to restart the TUI.
+The TUI SHALL show a tab bar with tabs `proposal`, `design`, `tasks`, `specs`. Tabs for absent artifacts SHALL be shown visually disabled and not selectable. The user SHALL be able to change tabs with keys `1`, `2`, `3`, `4`, with `Tab` / `→` (next available) and `Shift+Tab` / `←` (previous available), or by left-clicking on the tab label with the mouse. `Tab`, `Shift+Tab`, and the `←`/`→` arrows SHALL skip disabled tabs and wrap around at the ends; the arrows are secondary navigation that mirrors `Tab`/`Shift+Tab` and SHALL NOT cycle spec files. The `3` key SHALL have dual behavior: if the active tab is not `specs`, it switches to it; if it is already `specs`, it cycles to the next available spec. If an absent artifact appears on disk during the session, the corresponding tab SHALL be enabled without needing to restart the TUI.
 
 #### Scenario: Seleccionar tab disponible con tecla numérica
 - **WHEN** the user presses `2` and `design.md` exists
@@ -86,6 +83,14 @@ The TUI SHALL show a tab bar with tabs `proposal`, `design`, `tasks`, `specs`. T
 #### Scenario: Ciclar hacia atrás con Shift+Tab
 - **WHEN** the active tab is `tasks`, `specs` is disabled, and `design` is available
 - **THEN** the user pressing `Shift+Tab` changes the active tab to `design` (skipping disabled `specs`)
+
+#### Scenario: Avanzar tab con flecha derecha
+- **WHEN** the active tab is `proposal`, `design` is disabled, and `specs` is available
+- **THEN** the user pressing `→` changes the active tab to `specs` (skipping disabled `design`), identically to `Tab`
+
+#### Scenario: Retroceder tab con flecha izquierda
+- **WHEN** the active tab is `tasks`, `specs` is disabled, and `design` is available
+- **THEN** the user pressing `←` changes the active tab to `design` (skipping disabled `specs`), identically to `Shift+Tab`
 
 #### Scenario: Tab da la vuelta al final
 - **WHEN** the active tab is the last available tab and the user presses `Tab`
@@ -209,3 +214,4 @@ When the user toggles a task with `Space`, the progress counter in the tab bar S
 #### Scenario: Desmarcar tarea actualiza tab bar
 - **WHEN** the user presses `Space` on a completed task and the disk write succeeds
 - **THEN** the `N/M` counter and the progress bar in the tab bar decrement immediately in the same render
+
