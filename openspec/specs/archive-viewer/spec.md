@@ -41,21 +41,21 @@ In `ViewingArchive` mode, keys `e` (open editor) and `Space` (task toggle) SHALL
 - **THEN** the viewport scrolls and the task cursor position does not change
 - **AND** the rendered task list remains visible
 
-### Requirement: Helpbar adaptado en modo archivo
+### Requirement: Helpbar adapted in archive mode
 In `ViewingArchive` mode, the helpbar SHALL show the actual available keys, omitting `e` and `Space`, and including `Esc: index`.
 
-#### Scenario: Helpbar de solo lectura
+#### Scenario: Read-only helpbar
 - **WHEN** the mode is `ViewingArchive`
 - **THEN** the helpbar shows `1-4: artifact  j/k: scroll  a/Esc: index  q: quit`
 
-### Requirement: Volver al índice con Esc o 'a'
+### Requirement: Return to the index with Esc or 'a'
 In `ViewingArchive` mode, pressing `Esc` or `a` SHALL close the archive viewer and return to `ModeIndex`.
 
-#### Scenario: Esc vuelve al índice
+#### Scenario: Esc returns to the index
 - **WHEN** the mode is `ViewingArchive` and the user presses `Esc`
 - **THEN** the mode switches to `ModeIndex`
 
-#### Scenario: 'a' vuelve al índice
+#### Scenario: 'a' returns to the index
 - **WHEN** the mode is `ViewingArchive` and the user presses `a`
 - **THEN** the mode switches to `ModeIndex`
 

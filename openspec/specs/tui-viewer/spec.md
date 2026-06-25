@@ -3,10 +3,10 @@
 ## Purpose
 Defines the layout and main behavior of the TUI: screen structure with borders and fixed zones, navigation between changes and tabs, markdown rendering with glamour, periodic polling for disk changes, and a welcome screen when there are no active changes.
 ## Requirements
-### Requirement: Layout del TUI
+### Requirement: TUI layout
 The TUI SHALL divide the screen into fixed zones separated by horizontal lines: header (1 line), separator (1 line), tab bar (1 line), separator (1 line), content area (remainder), separator (1 line), help bar (1 line). In the `tasks` tab, a global progress bar is also added between the content area and the bottom separator. The header SHALL show `<project> · <change-name> [N/M]` where N is the position of the current change and M is the total number of active changes. The `View()` method SHALL return a `tea.View` struct with `AltScreen = true` and `BackgroundColor` set to the configured theme background color, instead of manually filling the background with padding.
 
-#### Scenario: Separadores visibles entre zonas
+#### Scenario: Separators visible between zones
 - **WHEN** the TUI is rendered in any tab
 - **THEN** a full-width horizontal line appears between the tab bar and the content, and another between the content and the help bar
 
@@ -14,130 +14,130 @@ The TUI SHALL divide the screen into fixed zones separated by horizontal lines: 
 - **WHEN** the TUI renders any view
 - **THEN** `tea.View.AltScreen` is set to `true` and `tea.View.BackgroundColor` reflects the configured theme
 
-#### Scenario: Un solo change activo
+#### Scenario: A single active change
 - **WHEN** there is a single active change
 - **THEN** the header shows `my-project · feat-a [1/1]`
 
-#### Scenario: Varios changes activos
+#### Scenario: Several active changes
 - **WHEN** there are three active changes and the second is selected
 - **THEN** the header shows `my-project · feat-b [2/3]`
 
-### Requirement: Navegación entre changes
+### Requirement: Navigation between changes
 The TUI SHALL allow navigating between active changes with `h` (previous) and `l` (next). Changing the change SHALL reset the selected tab to `proposal` if available, or to the first available artifact otherwise. Pressing `a` or `Esc` from `ModeNormal` SHALL open `ModeIndex`. Pressing `q` or `Ctrl+C` SHALL exit the application from any mode.
 
-#### Scenario: Avanzar al siguiente change
+#### Scenario: Advance to the next change
 - **WHEN** the user presses `l` while on change N
 - **THEN** the TUI shows change N+1 (wrapping to the first if on the last)
 
-#### Scenario: Retroceder al change anterior
+#### Scenario: Go back to the previous change
 - **WHEN** the user presses `h` while on change N
 - **THEN** the TUI shows change N-1 (wrapping to the last if on the first)
 
-#### Scenario: 'a' desde ModeNormal abre el índice
+#### Scenario: 'a' from ModeNormal opens the index
 - **WHEN** the mode is `ModeNormal` and the user presses `a`
 - **THEN** the mode switches to `ModeIndex`
 
-#### Scenario: 'Esc' desde ModeNormal abre el índice
+#### Scenario: 'Esc' from ModeNormal opens the index
 - **WHEN** the mode is `ModeNormal` and the user presses `Esc`
 - **THEN** the mode switches to `ModeIndex`
 
-#### Scenario: Salir con q desde cualquier modo
+#### Scenario: Quit with q from any mode
 - **WHEN** the user presses `q` from any mode
 - **THEN** the TUI exits
 
-### Requirement: Tabs de artifact
+### Requirement: Artifact tabs
 The TUI SHALL show a tab bar with tabs `proposal`, `design`, `tasks`, `specs`. Tabs for absent artifacts SHALL be shown visually disabled and not selectable. The user SHALL be able to change tabs with keys `1`, `2`, `3`, `4`, with `Tab` / `→` (next available) and `Shift+Tab` / `←` (previous available), or by left-clicking on the tab label with the mouse. `Tab`, `Shift+Tab`, and the `←`/`→` arrows SHALL skip disabled tabs and wrap around at the ends; the arrows are secondary navigation that mirrors `Tab`/`Shift+Tab` and SHALL NOT cycle spec files. The `3` key SHALL select the `specs` tab exactly like the other numeric keys select their tabs (`1`→`proposal`, `2`→`design`, `4`→`tasks`); it SHALL NOT cycle specs. Moving between specs is the responsibility of the secondary sub-navigation (`[` / `]`) defined below and in the `specs-subnav` capability. If an absent artifact appears on disk during the session, the corresponding tab SHALL be enabled without needing to restart the TUI.
 
-#### Scenario: Seleccionar tab disponible con tecla numérica
+#### Scenario: Select an available tab with a numeric key
 - **WHEN** the user presses `2` and `design.md` exists
 - **THEN** the content area shows the rendered design
 
-#### Scenario: Intentar seleccionar tab deshabilitada con tecla
+#### Scenario: Attempt to select a disabled tab with a key
 - **WHEN** the user presses `2` and `design.md` does not exist
 - **THEN** the tab does not change and no error occurs
 
-#### Scenario: Seleccionar tab disponible con click del mouse
+#### Scenario: Select an available tab with a mouse click
 - **WHEN** the user left-clicks on the "design" tab label and `design.md` exists
 - **THEN** the content area shows the rendered design
 
-#### Scenario: Intentar seleccionar tab deshabilitada con click
+#### Scenario: Attempt to select a disabled tab with a click
 - **WHEN** the user left-clicks on a disabled tab label and the artifact does not exist
 - **THEN** the tab does not change and no error occurs
 
-#### Scenario: Tab se habilita al aparecer artifact
+#### Scenario: Tab becomes enabled when the artifact appears
 - **WHEN** the TUI starts without `proposal.md` and an external process creates that file
 - **THEN** within a maximum of 500 ms the `proposal` tab is shown as enabled and is selectable
 
-#### Scenario: Tecla 3 desde otra tab va a specs
+#### Scenario: The 3 key from another tab goes to specs
 - **WHEN** the active tab is `proposal` and the user presses `3`
 - **THEN** the active tab changes to `specs`
 
-#### Scenario: Tecla 3 en specs no cambia el spec activo
+#### Scenario: The 3 key on specs does not change the active spec
 - **WHEN** the active tab is already `specs`, the change has multiple specs, and the user presses `3`
 - **THEN** the active tab remains `specs` and the active spec does not change
 
-#### Scenario: Ciclar hacia adelante con Tab
+#### Scenario: Cycle forward with Tab
 - **WHEN** the active tab is `proposal`, `design` is disabled, and `specs` is available
 - **THEN** the user pressing `Tab` changes the active tab to `specs` (skipping disabled `design`)
 
-#### Scenario: Ciclar hacia atrás con Shift+Tab
+#### Scenario: Cycle backward with Shift+Tab
 - **WHEN** the active tab is `tasks`, `specs` is disabled, and `design` is available
 - **THEN** the user pressing `Shift+Tab` changes the active tab to `design` (skipping disabled `specs`)
 
-#### Scenario: Avanzar tab con flecha derecha
+#### Scenario: Advance the tab with the right arrow
 - **WHEN** the active tab is `proposal`, `design` is disabled, and `specs` is available
 - **THEN** the user pressing `→` changes the active tab to `specs` (skipping disabled `design`), identically to `Tab`
 
-#### Scenario: Retroceder tab con flecha izquierda
+#### Scenario: Go back a tab with the left arrow
 - **WHEN** the active tab is `tasks`, `specs` is disabled, and `design` is available
 - **THEN** the user pressing `←` changes the active tab to `design` (skipping disabled `specs`), identically to `Shift+Tab`
 
-#### Scenario: Tab da la vuelta al final
+#### Scenario: Tab wraps around at the end
 - **WHEN** the active tab is the last available tab and the user presses `Tab`
 - **THEN** the active tab wraps around to the first available tab
 
-#### Scenario: Shift+Tab da la vuelta al principio
+#### Scenario: Shift+Tab wraps around at the beginning
 - **WHEN** the active tab is the first available tab and the user presses `Shift+Tab`
 - **THEN** the active tab wraps around to the last available tab
 
-#### Scenario: Tab no actúa en modo configuración
+#### Scenario: Tab has no effect in config mode
 - **WHEN** the mode is `ModeViewingConfig` and the user presses `Tab`
 - **THEN** the tab does not change and the key is handled by the text input instead
 
-### Requirement: Render de markdown con glamour
+### Requirement: Markdown rendering with glamour
 The TUI SHALL render `proposal`, `design`, and `specs` artifacts using glamour with the width of the content area. The content area SHALL be scrollable with `j`/`k` or the arrow keys.
 
-#### Scenario: Scroll en contenido largo
+#### Scenario: Scroll in long content
 - **WHEN** the artifact has more content than the screen height and the user presses `j`
 - **THEN** the content scrolls down one line
 
-#### Scenario: Wrap de glamour ajustado al ancho
+#### Scenario: Glamour wrap fitted to the width
 - **WHEN** the terminal is 80 columns wide
 - **THEN** glamour renders the markdown without exceeding those 80 columns
 
-### Requirement: Pantalla de bienvenida sin changes activos
+### Requirement: Welcome screen with no active changes
 When the TUI starts and there are no active changes, it SHALL open directly in the index view (`ModeIndex`), showing the "Active Changes" section (empty), "Specifications", and "Archived Changes" sections within the full TUI chrome, with the index help bar. If the TUI enters `ModeNormal` while there are no active changes (e.g., all changes were deleted during the session), it SHALL show an informational message with the available actions.
 
-#### Scenario: Arranque sin changes activos muestra el índice
+#### Scenario: Startup with no active changes shows the index
 - **WHEN** the TUI starts and `openspec/changes/` contains no active subdirectories
 - **THEN** the TUI shows the index view with "Active Changes", "Specifications", and "Archived Changes" sections and the help bar `j/k: navigate  Enter: open  Space: expand  s: sort by suffix  i: info  Esc: quit`
 
-#### Scenario: Sin changes activos desde ModeNormal
+#### Scenario: No active changes from ModeNormal
 - **WHEN** the mode is `ModeNormal` and there are no active changes
 - **THEN** the TUI shows `"No active changes. Create one with /opsx:propose"` and the help line `a/Esc: index  q: quit`
 
-### Requirement: Salir del TUI
+### Requirement: Exit the TUI
 The user SHALL be able to exit the TUI at any time with `q` or `Ctrl+C`.
 
-#### Scenario: Salir con q
+#### Scenario: Exit with q
 - **WHEN** the user presses `q`
 - **THEN** the TUI exits and the terminal is left in a clean state
 
-#### Scenario: Salir con Ctrl+C
+#### Scenario: Exit with Ctrl+C
 - **WHEN** the user presses `Ctrl+C`
 - **THEN** the TUI exits and the terminal is left in a clean state
 
-### Requirement: Barra de ayuda de teclado
+### Requirement: Keyboard help bar
 The TUI SHALL show a fixed help line at the bottom listing the shortcuts active in the current context. On the `specs` tab, when the change has more than one spec, the help line SHALL advertise `[` / `]` for moving between specs. The help line SHALL NOT advertise the removed `3`-cycle.
 
 #### Scenario: Tasks tab help line
@@ -152,70 +152,70 @@ The TUI SHALL show a fixed help line at the bottom listing the shortcuts active 
 - **WHEN** the active tab is `proposal` or `design` and the mode is `ModeNormal`
 - **THEN** the help line includes a `h/l: change` hint, artifact navigation, `j/k: scroll`, `e: edit`, and `Esc: index`
 
-### Requirement: Polling periódico de artifacts
+### Requirement: Periodic polling of artifacts
 The TUI SHALL start a polling cycle every 500 ms on startup. On each tick it SHALL compare the on-disk content of the artifacts of the currently visible change with the in-memory content, AND detect changes in artifact presence (absent → present). If at the moment of the tick `len(m.project.Changes) == 0`, the tick SHALL attempt to reload the change list from disk and adopt the new state if at least one change is available. The cycle SHALL continue while the TUI is active.
 
-#### Scenario: Tick sin cambios
+#### Scenario: Tick with no changes
 - **WHEN** no file in the change has changed on disk
 - **THEN** the TUI does not update any state or re-render anything
 
-#### Scenario: Tick detecta cambio en tasks.md
+#### Scenario: Tick detects a change in tasks.md
 - **WHEN** the content of `tasks.md` on disk differs from the in-memory content
 - **THEN** the TUI re-parses the tasks, restores the cursor, and refreshes the view if the active tab is `tasks`
 
-#### Scenario: Tick detecta cambio en artifact de markdown
+#### Scenario: Tick detects a change in a markdown artifact
 - **WHEN** the content of `proposal.md`, `design.md`, or a `spec.md` on disk differs from the in-memory content
 - **THEN** the TUI invalidates the corresponding entry in the render cache; the next time the user accesses that tab it is re-rendered with the new content
 
-#### Scenario: Tick detecta aparición de artifact ausente
+#### Scenario: Tick detects the appearance of an absent artifact
 - **WHEN** an artifact that did not exist in the previous tick now exists on disk
 - **THEN** the TUI updates the artifact presence state and enables the corresponding tab
 
-#### Scenario: TUI arranca sin changes activos y se crea uno
+#### Scenario: TUI starts with no active changes and one is created
 - **WHEN** the TUI starts with `len(m.project.Changes) == 0` and during the session a change is created on disk
 - **THEN** within a maximum of 500 ms the TUI reloads the change list and shows the new change
 
-### Requirement: Actualización de tasks visible en tiempo real
+### Requirement: Real-time update of the visible tasks
 When the TUI detects a change in `tasks.md` and the active tab is `tasks`, it SHALL refresh the view immediately without user intervention.
 
-#### Scenario: Agente marca tarea como completada
-- **WHEN** an external process changes `- [ ] tarea` to `- [x] tarea` in `tasks.md`
+#### Scenario: Agent marks a task as completed
+- **WHEN** an external process changes `- [ ] task` to `- [x] task` in `tasks.md`
 - **THEN** within a maximum of 500 ms the TUI shows the task as completed with the updated progress bar
 
-### Requirement: Word wrap en todos los items de tarea
+### Requirement: Word wrap on all task items
 In the `tasks` tab, all task items SHALL word-wrap to the width of the content area (`m.width - 2`), regardless of whether the item is under the cursor or not.
 
-#### Scenario: Item largo sin cursor
+#### Scenario: Long item without cursor
 - **WHEN** a task item has more characters than the terminal width and the cursor is not on it
 - **THEN** the text word-wraps and is shown in full across multiple lines
 
-#### Scenario: Item largo con cursor
+#### Scenario: Long item with cursor
 - **WHEN** a task item has more characters than the terminal width and the cursor is on it
 - **THEN** the text word-wraps and is shown in full across multiple lines with the cursor style
 
-### Requirement: Barra de progreso global en la vista de tasks
+### Requirement: Global progress bar in the tasks view
 The TUI SHALL show a global progress bar as the first content line of the `tasks` tab, before any section. The bar SHALL reflect the total completed tasks over the total tasks in the change.
 
-#### Scenario: Change con tareas parcialmente completadas
+#### Scenario: Change with partially completed tasks
 - **WHEN** a change has 3 completed tasks out of 8 total
 - **THEN** the first line of the tasks view shows a progress bar with `3/8` and a proportional fraction of filled blocks
 
-#### Scenario: Change con todas las tareas completadas
+#### Scenario: Change with all tasks completed
 - **WHEN** all tasks in the change are marked as completed
 - **THEN** the progress bar appears completely filled and shows the total as `N/N`
 
-#### Scenario: Change sin tareas
+#### Scenario: Change with no tasks
 - **WHEN** the change has no task items
 - **THEN** no global progress bar is shown
 
-### Requirement: Actualización inmediata del contador de progreso tras toggle
+### Requirement: Immediate update of the progress counter after toggle
 When the user toggles a task with `Space`, the progress counter in the tab bar SHALL update in the same frame, without waiting for the next polling cycle.
 
-#### Scenario: Marcar tarea completa actualiza tab bar
+#### Scenario: Marking a task complete updates the tab bar
 - **WHEN** the user presses `Space` on a pending task and the disk write succeeds
 - **THEN** the `N/M` counter and the progress bar in the tab bar update immediately in the same render
 
-#### Scenario: Desmarcar tarea actualiza tab bar
+#### Scenario: Unmarking a task updates the tab bar
 - **WHEN** the user presses `Space` on a completed task and the disk write succeeds
 - **THEN** the `N/M` counter and the progress bar in the tab bar decrement immediately in the same render
 
