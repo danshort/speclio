@@ -8,34 +8,97 @@ import (
 	"github.com/danshort/lectern/internal/openspec"
 )
 
-func (m *Model) mainViewContent() string {
-	rows := []string{
-		m.boxTop(),
-		m.addBorderSides(m.renderHeader()),
-		m.addBorderSides(m.renderTabBar()),
-		m.boxInnerSep(),
-	}
-	if m.hasSpecSubnav() {
-		rows = append(rows, m.addBorderSides(m.renderSpecSubnav()))
-	}
-	rows = append(rows,
-		m.addBorderSides(m.vp.View()),
-		m.boxInnerSep(),
-		m.addBorderSides(m.renderHelpBar()),
-		m.boxBottom(),
-	)
-	return strings.Join(rows, "\n")
+// rowID identifies a chrome row so hit-testing can locate it without hardcoded
+// screen offsets.
+type rowID int
+
+const (
+	rowBoxTop rowID = iota
+	rowHeader
+	rowTabBar
+	rowSep
+	rowSubnav
+	rowHelp
+	rowBoxBottom
+)
+
+// layoutHasTabBar reports whether the current mode renders the artifact tab bar
+// (and therefore can render the optional spec subnav).
+func (m *Model) layoutHasTabBar() bool {
+	return m.mode == ModeNormal || m.mode == ModeViewingArchive
 }
 
-func (m *Model) viewContentWithChrome() string {
-	rows := []string{
-		m.boxTop(),
-		m.addBorderSides(m.renderHeader()),
-		m.boxInnerSep(),
-		m.addBorderSides(m.vp.View()),
-		m.boxInnerSep(),
-		m.addBorderSides(m.renderHelpBar()),
-		m.boxBottom(),
+// chromeRowsAbove returns the IDs of the chrome rows above the content viewport,
+// in order. This pure structural list (no rendering) is the single source for
+// viewport sizing (contentHeight), hit-testing (viewportTop / chromeRowIndex),
+// and render order (viewportLayout).
+func (m *Model) chromeRowsAbove() []rowID {
+	ids := []rowID{rowBoxTop, rowHeader}
+	if m.layoutHasTabBar() {
+		ids = append(ids, rowTabBar)
+	}
+	ids = append(ids, rowSep)
+	if m.layoutHasTabBar() && m.hasSpecSubnav() {
+		ids = append(ids, rowSubnav)
+	}
+	return ids
+}
+
+// chromeRowsBelow returns the IDs of the chrome rows below the content viewport.
+func (m *Model) chromeRowsBelow() []rowID {
+	return []rowID{rowSep, rowHelp, rowBoxBottom}
+}
+
+// chromeRowCount is the number of non-viewport rows in the current layout.
+func (m *Model) chromeRowCount() int { return len(m.chromeRowsAbove()) + len(m.chromeRowsBelow()) }
+
+// viewportTop is the screen row (0-based) where the content viewport begins.
+func (m *Model) viewportTop() int { return len(m.chromeRowsAbove()) }
+
+// chromeRowIndex returns the screen row (0-based) of the given chrome row above
+// the viewport, or -1 if that row is absent in the current layout.
+func (m *Model) chromeRowIndex(id rowID) int {
+	for i, r := range m.chromeRowsAbove() {
+		if r == id {
+			return i
+		}
+	}
+	return -1
+}
+
+// renderChromeRow renders a single chrome row by ID. Only called from View()
+// (where the project is populated); contentHeight/hit-testing use the ID lists
+// above and never render.
+func (m *Model) renderChromeRow(id rowID) string {
+	switch id {
+	case rowBoxTop:
+		return m.boxTop()
+	case rowHeader:
+		return m.addBorderSides(m.renderHeader())
+	case rowTabBar:
+		return m.addBorderSides(m.renderTabBar())
+	case rowSep:
+		return m.boxInnerSep()
+	case rowSubnav:
+		return m.addBorderSides(m.renderSpecSubnav())
+	case rowHelp:
+		return m.addBorderSides(m.renderHelpBar())
+	case rowBoxBottom:
+		return m.boxBottom()
+	}
+	return ""
+}
+
+// viewportLayout assembles the full view — chrome above, the viewport, chrome
+// below — from the same row-ID lists used to size it.
+func (m *Model) viewportLayout() string {
+	rows := make([]string, 0, m.chromeRowCount()+1)
+	for _, id := range m.chromeRowsAbove() {
+		rows = append(rows, m.renderChromeRow(id))
+	}
+	rows = append(rows, m.addBorderSides(m.vp.View()))
+	for _, id := range m.chromeRowsBelow() {
+		rows = append(rows, m.renderChromeRow(id))
 	}
 	return strings.Join(rows, "\n")
 }

@@ -7,10 +7,10 @@
 
 ## 2. Vertical SSOT — chrome rows drive height (PR2, on PR1)
 
-- [ ] 2.1 Express the chrome rows as one descriptor keyed by chrome *shape* (with-tab-bar + optional spec subnav for normal/archive; the without-tab-bar shape that backs all four `viewContentWithChrome` modes — config/index/spec/worktrees; and the fixed empty-project view), rendered by `View()`. Note one descriptor backs the four viewport-with-chrome modes — they differ only in header/help text, not row count.
-- [ ] 2.2 Derive `contentHeight()` from that chrome-row list (terminal height minus chrome rows, incl. the optional spec subnav) instead of the hand-summed `chrome*` constants.
-- [ ] 2.3 Replace the row-index literals `Y==1`, `Y==2` (mouse.go) and `indexViewportContentStart` (index.go) with values derived from the same chrome-row source.
-- [ ] 2.4 Confirm the height-invariant test (1.1) still passes; `gofmt`/`vet`/`go test ./...` clean.
+- [x] 2.1 Express the chrome rows as one descriptor keyed by chrome *shape* (with-tab-bar + optional spec subnav for normal/archive; the without-tab-bar shape that backs all four `viewContentWithChrome` modes — config/index/spec/worktrees; and the fixed empty-project view), rendered by `View()`. Note one descriptor backs the four viewport-with-chrome modes — they differ only in header/help text, not row count.
+- [x] 2.2 Derive `contentHeight()` from that chrome-row list (terminal height minus chrome rows, incl. the optional spec subnav) instead of the hand-summed `chrome*` constants.
+- [x] 2.3 Replace the row-index literals `Y==1`, `Y==2` (mouse.go) and `indexViewportContentStart` (index.go) with values derived from the same chrome-row source.
+- [x] 2.4 Confirm the height-invariant test (1.1) still passes; `gofmt`/`vet`/`go test ./...` clean.
 
 ## 3. Tab x-ranges emitted by the renderer (PR3, on PR2)
 

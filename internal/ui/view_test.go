@@ -1441,7 +1441,7 @@ func TestIndexClickWithOOBCursorDoesNotPanic(t *testing.T) {
 	}()
 	// Y offset +3 lands on the first visible item's row (past the section
 	// header) so the click reaches the bounds-guarded FilterIndices access.
-	res, _ := m.handleMouseClick(tea.MouseClickMsg{Button: tea.MouseLeft, X: 2, Y: indexViewportContentStart + 3})
+	res, _ := m.handleMouseClick(tea.MouseClickMsg{Button: tea.MouseLeft, X: 2, Y: m.viewportTop() + 3})
 	got := res.(Model)
 	if got.index.Cursor >= len(got.index.FilterIndices) {
 		t.Fatalf("cursor %d not repositioned into filtered range (len %d)", got.index.Cursor, len(got.index.FilterIndices))

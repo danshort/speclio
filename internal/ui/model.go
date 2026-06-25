@@ -217,14 +217,10 @@ func (m Model) View() tea.View {
 	}
 
 	var content string
-	if m.mode == ModeViewingConfig {
-		content = m.viewContentWithChrome()
-	} else if m.mode == ModeIndex || m.mode == ModeViewingSpec || m.mode == ModeWorktrees {
-		content = m.viewContentWithChrome()
-	} else if len(m.project.Changes) == 0 && m.mode == ModeNormal {
+	if len(m.project.Changes) == 0 && m.mode == ModeNormal {
 		content = m.emptyViewContent()
 	} else {
-		content = m.mainViewContent()
+		content = m.viewportLayout()
 	}
 
 	if m.helpOpen {
@@ -384,28 +380,10 @@ func (m *Model) currentArchive() *openspec.Change {
 	return nil
 }
 
-const (
-	chromeTop        = 1
-	chromeHeader     = 1
-	chromeTabBar     = 1
-	chromeInnerSep   = 1
-	chromeSpecSubnav = 1
-	chromeHelpBar    = 1
-	chromeBottom     = 1
-)
-
 func (m *Model) contentHeight() int {
-	if m.mode == ModeIndex || m.mode == ModeViewingSpec || m.mode == ModeViewingConfig || m.mode == ModeWorktrees {
-		h := m.height - (chromeTop + chromeHeader + chromeInnerSep + chromeInnerSep + chromeHelpBar + chromeBottom)
-		if h < 1 {
-			h = 1
-		}
-		return h
-	}
-	h := m.height - (chromeTop + chromeHeader + chromeTabBar + chromeInnerSep + chromeInnerSep + chromeHelpBar + chromeBottom)
-	if m.hasSpecSubnav() {
-		h -= chromeSpecSubnav
-	}
+	// Derived from the same chrome-row list View() renders, so the viewport can
+	// never drift out of sync with the surrounding chrome.
+	h := m.height - m.chromeRowCount()
 	if h < 1 {
 		h = 1
 	}

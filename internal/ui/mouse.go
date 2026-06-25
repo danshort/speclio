@@ -44,10 +44,11 @@ func (m Model) handleMouseClick(msg tea.MouseClickMsg) (tea.Model, tea.Cmd) {
 	}
 
 	if m.mode == ModeIndex {
-		if msg.Y < indexViewportContentStart || msg.Y >= indexViewportContentStart+m.vp.Height() {
+		top := m.viewportTop()
+		if msg.Y < top || msg.Y >= top+m.vp.Height() {
 			return m, nil
 		}
-		contentLine := msg.Y - indexViewportContentStart + m.vp.YOffset()
+		contentLine := msg.Y - top + m.vp.YOffset()
 		idx, found := m.indexItemAtContentLine(contentLine)
 		if !found {
 			return m, nil
@@ -78,12 +79,13 @@ func (m Model) handleMouseClick(msg tea.MouseClickMsg) (tea.Model, tea.Cmd) {
 		return m, nil
 	}
 
-	if msg.Y == 1 {
+	if msg.Y == m.chromeRowIndex(rowHeader) {
 		m.enterIndex()
 		return m, nil
 	}
 
-	if msg.Y != 2 {
+	tabRow := m.chromeRowIndex(rowTabBar)
+	if tabRow < 0 || msg.Y != tabRow {
 		return m, nil
 	}
 

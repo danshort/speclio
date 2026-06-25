@@ -581,8 +581,6 @@ func (m *Model) renderArchivedItem(ch openspec.Change, cursor bool, maxName int)
 	return cursorMark + name + "  " + date
 }
 
-const indexViewportContentStart = 3
-
 func (m *Model) indexItemAtContentLine(contentLine int) (int, bool) {
 	line := 0
 
