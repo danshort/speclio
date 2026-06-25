@@ -1378,3 +1378,122 @@ func TestExpandArchivedChangeNavigationAndEmpty(t *testing.T) {
 		}
 	})
 }
+
+// Regression: the mouse wheel in index mode must clamp the cursor against the
+// VISIBLE (filtered) item count, not the unfiltered len(Items). Otherwise the
+// cursor overshoots the filtered list and a subsequent click panics.
+func TestMouseWheelClampsToVisibleCountWithFilter(t *testing.T) {
+	m := Model{
+		mode:  ModeIndex,
+		width: 80,
+		project: &openspec.Project{Changes: []openspec.Change{
+			{Name: "alpha"}, {Name: "beta"}, {Name: "gamma"},
+		}},
+		index: indexState{
+			ExpandedSpecs:    map[int]bool{},
+			ExpandedArchives: map[int]bool{},
+			FilterText:       "alpha",
+		},
+	}
+	m.vp = viewport.New(viewport.WithWidth(80), viewport.WithHeight(20))
+	m.vpReady = true
+	m.buildIndexItems()
+	m.applyFilter() // only "alpha" matches → visibleItemCount() == 1
+
+	for i := 0; i < 5; i++ {
+		res, _ := m.handleMouseWheel(tea.MouseWheelMsg{Button: tea.MouseWheelDown})
+		m = res.(Model)
+	}
+	if m.index.Cursor > m.visibleItemCount()-1 {
+		t.Fatalf("cursor %d exceeded visible count %d after wheel", m.index.Cursor, m.visibleItemCount())
+	}
+}
+
+// Regression: a click in index mode must not panic even if the cursor is out of
+// range relative to FilterIndices (e.g. left desynced by another path).
+func TestIndexClickWithOOBCursorDoesNotPanic(t *testing.T) {
+	m := Model{
+		mode:  ModeIndex,
+		width: 80,
+		project: &openspec.Project{Changes: []openspec.Change{
+			{Name: "alpha"}, {Name: "beta"}, {Name: "gamma"},
+		}},
+		index: indexState{
+			ExpandedSpecs:    map[int]bool{},
+			ExpandedArchives: map[int]bool{},
+			FilterText:       "alpha",
+		},
+	}
+	m.vp = viewport.New(viewport.WithWidth(80), viewport.WithHeight(20))
+	m.vpReady = true
+	m.buildIndexItems()
+	m.applyFilter()
+	m.refreshIndexViewport()
+	m.index.Cursor = 99 // out of range vs FilterIndices
+
+	defer func() {
+		if r := recover(); r != nil {
+			t.Fatalf("click panicked with out-of-range cursor: %v", r)
+		}
+	}()
+	// Y offset +3 lands on the first visible item's row (past the section
+	// header) so the click reaches the bounds-guarded FilterIndices access.
+	res, _ := m.handleMouseClick(tea.MouseClickMsg{Button: tea.MouseLeft, X: 2, Y: indexViewportContentStart + 3})
+	got := res.(Model)
+	if got.index.Cursor >= len(got.index.FilterIndices) {
+		t.Fatalf("cursor %d not repositioned into filtered range (len %d)", got.index.Cursor, len(got.index.FilterIndices))
+	}
+}
+
+// Regression: editing a foreign worktree change and returning from the editor
+// must reload into worktreeViewChange, NOT overwrite the rooted project's
+// change at m.changeIdx (the bug mergeReloadedChange would otherwise cause).
+func TestEditorReturnForeignWorktreeDoesNotCorruptRooted(t *testing.T) {
+	dir := t.TempDir()
+	if err := os.WriteFile(filepath.Join(dir, "proposal.md"), []byte("# updated foreign"), 0644); err != nil {
+		t.Fatal(err)
+	}
+	foreign := openspec.Change{
+		Name:     "feat-foreign",
+		Path:     dir,
+		Proposal: openspec.Artifact{Present: true, Content: "# old foreign"},
+	}
+	rooted := openspec.Change{
+		Name:     "rooted",
+		Path:     t.TempDir(),
+		Proposal: openspec.Artifact{Present: true, Content: "ROOTED CONTENT"},
+	}
+	m := Model{
+		mode:                  ModeViewingArchive,
+		viewingWorktreeChange: true,
+		worktreeViewChange:    foreign,
+		tab:                   TabProposal,
+		changeIdx:             0,
+		width:                 80,
+		vpReady:               true,
+		loader:                testLoader(),
+		project:               &openspec.Project{Changes: []openspec.Change{rooted}},
+		renderCache:           map[Tab]string{},
+	}
+	m.vp = viewport.New(viewport.WithWidth(80), viewport.WithHeight(20))
+
+	result, _ := m.Update(editorReturnMsg{})
+	got := result.(Model)
+
+	if got.project.Changes[0].Proposal.Content != "ROOTED CONTENT" {
+		t.Errorf("rooted project change was corrupted: %q", got.project.Changes[0].Proposal.Content)
+	}
+	if !strings.Contains(got.worktreeViewChange.Proposal.Content, "updated foreign") {
+		t.Errorf("worktree change was not reloaded from disk: %q", got.worktreeViewChange.Proposal.Content)
+	}
+}
+
+// Regression: Ctrl+C must quit even while the help overlay is open (the overlay
+// advertises it).
+func TestHelpOverlayCtrlCQuits(t *testing.T) {
+	m := Model{helpOpen: true}
+	_, cmd := m.dispatchKey(tea.KeyPressMsg{Code: 'c', Mod: tea.ModCtrl})
+	if cmd == nil {
+		t.Error("expected quit command on ctrl+c while help overlay open")
+	}
+}

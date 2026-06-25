@@ -1,9 +1,11 @@
 package openspec
 
 import (
+	"context"
 	"os/exec"
 	"path/filepath"
 	"strings"
+	"time"
 )
 
 // Worktree describes a single git worktree as reported by
@@ -40,7 +42,11 @@ func ListWorktrees(root string) ([]Worktree, error) {
 // project directory. No shell is involved (exec.Command does not interpret
 // shell metacharacters), and the arguments are fixed literals.
 func runGit(dir string, args ...string) ([]byte, error) {
-	cmd := exec.Command("git", append([]string{"-C", dir}, args...)...)
+	// Bound the call so a hung filesystem, lock, or pathological repo cannot
+	// freeze the TUI (runGit is invoked synchronously on the update goroutine).
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	cmd := exec.CommandContext(ctx, "git", append([]string{"-C", dir}, args...)...)
 	return cmd.Output()
 }
 

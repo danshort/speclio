@@ -1,5 +1,3 @@
-**English** | **[Español](README.es.md)**
-
 # lectern
 
 <p align="center">

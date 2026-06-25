@@ -35,7 +35,7 @@ var helpCatalog = []helpGroup{
 		Shortcuts: []shortcut{
 			{"j/k ↑↓", "navigate"},
 			{"Enter", "open"},
-			{"Space", "expand/collapse spec"},
+			{"Space", "expand/collapse spec or archived change"},
 			{"/", "filter"},
 			{"s", "toggle spec sort"},
 			{"w", "worktrees view"},

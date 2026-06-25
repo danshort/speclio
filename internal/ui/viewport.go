@@ -57,6 +57,9 @@ func (m *Model) loadViewportForConfig() tea.Cmd {
 	m.vp.SetContent(raw)
 	width := m.renderWidth()
 	m.ensureRenderer(width)
+	if m.glamourRenderer == nil {
+		return func() tea.Msg { return renderedConfigMsg{content: raw} }
+	}
 	return func() tea.Msg {
 		out, err := m.glamourRenderer.Render(raw)
 		if err != nil {
@@ -80,6 +83,16 @@ func (m *Model) loadViewportForSpec() tea.Cmd {
 	m.vp.SetContent(raw)
 	width := m.renderWidth()
 	m.ensureRenderer(width)
+	if m.glamourRenderer == nil {
+		if m.specViewer.FocusMode {
+			block := openspec.ExtractRequirement(raw, m.specViewer.JumpTarget)
+			if block == "" {
+				block = "  (spec not available)"
+			}
+			return func() tea.Msg { return specRenderedMsg{content: block} }
+		}
+		return func() tea.Msg { return specRenderedMsg{content: raw} }
+	}
 
 	if m.specViewer.FocusMode {
 		jumpTarget := m.specViewer.JumpTarget
@@ -166,6 +179,9 @@ func (m *Model) loadViewportForArtifact() tea.Cmd {
 	tab := m.tab
 	width := m.renderWidth()
 	m.ensureRenderer(width)
+	if m.glamourRenderer == nil {
+		return func() tea.Msg { return renderedMsg{tab: tab, content: raw} }
+	}
 	return func() tea.Msg {
 		out, err := m.glamourRenderer.Render(raw)
 		if err != nil {
