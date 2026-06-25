@@ -1,5 +1,21 @@
 # Changelog
 
+## [0.18.0](https://github.com/danshort/lectern/compare/v0.17.0...v0.18.0) (2026-06-25)
+
+
+### Features
+
+* add `?` keyboard shortcut help overlay ([#32](https://github.com/danshort/lectern/issues/32)) ([5bae0cb](https://github.com/danshort/lectern/commit/5bae0cbef20c94c2de0b95cd0d46d71e2891090b))
+* add `e` (open in editor) shortcut to spec views ([#24](https://github.com/danshort/lectern/issues/24)) ([52399d1](https://github.com/danshort/lectern/commit/52399d1149d6a90ed619d0e8e2dc092603e7bd86))
+* add expand (space) to archived changes in index ([#31](https://github.com/danshort/lectern/issues/31)) ([bd474e3](https://github.com/danshort/lectern/commit/bd474e3d65ce3d56124f69376e5472fb262e35bf))
+* add worktrees view (w) to survey active changes and live task progress across all git worktrees of the repository, with read-only viewing of changes in sibling worktrees ([9e8cd05](https://github.com/danshort/lectern/commit/9e8cd05009eda079acb744e2ae747f0182cb93ca))
+
+
+### Bug Fixes
+
+* index-mode panic, worktree-edit corruption, and robustness gaps (+ English-only docs) ([#34](https://github.com/danshort/lectern/issues/34)) ([655900d](https://github.com/danshort/lectern/commit/655900d5b270c983204b44564413a494b0879e2c))
+* render archived change dates in ISO 8601 format ([#27](https://github.com/danshort/lectern/issues/27)) ([072099c](https://github.com/danshort/lectern/commit/072099c72f9da30e0fca48700e456208c958c71a))
+
 ## [0.17.0](https://github.com/danshort/lectern/compare/v0.16.0...v0.17.0) (2026-06-25)
 
 
