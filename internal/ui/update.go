@@ -75,6 +75,15 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 			return m, m.loadViewport()
 		}
+		if m.viewingWorktreeChange {
+			// A foreign worktree change was edited. Reload it into
+			// worktreeViewChange — NOT m.project.Changes[m.changeIdx], which
+			// mergeReloadedChange would target — so the rooted project's state
+			// is never overwritten with the sibling worktree's content.
+			m.worktreeViewChange = m.loader.ReloadChange(m.worktreeViewChange)
+			delete(m.renderCache, m.tab)
+			return m, m.loadViewport()
+		}
 		ch := m.current()
 		if ch != nil {
 			var cursorText string
@@ -113,6 +122,9 @@ func (m Model) dispatchKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 		switch msg.String() {
 		case "?", "esc", "q":
 			m.helpOpen = false
+		case "ctrl+c":
+			// Honor the quit shortcut the overlay itself advertises.
+			return m, tea.Quit
 		}
 		return m, nil
 	}

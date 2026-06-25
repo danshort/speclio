@@ -21,7 +21,7 @@ func (m Model) handleMouseWheel(msg tea.MouseWheelMsg) (tea.Model, tea.Cmd) {
 		return m, nil
 	case tea.MouseWheelDown:
 		if m.mode == ModeIndex {
-			if m.index.Cursor < len(m.index.Items)-1 {
+			if m.index.Cursor < m.visibleItemCount()-1 {
 				m.index.Cursor++
 			}
 			m.refreshIndexViewport()
@@ -53,8 +53,8 @@ func (m Model) handleMouseClick(msg tea.MouseClickMsg) (tea.Model, tea.Cmd) {
 			return m, nil
 		}
 		if m.index.FilterIndices != nil {
-			cursorItem := m.index.FilterIndices[m.index.Cursor]
-			if cursorItem != idx {
+			cursorOOB := m.index.Cursor < 0 || m.index.Cursor >= len(m.index.FilterIndices)
+			if cursorOOB || m.index.FilterIndices[m.index.Cursor] != idx {
 				for ci, ri := range m.index.FilterIndices {
 					if ri == idx {
 						m.index.Cursor = ci
@@ -143,18 +143,7 @@ func (m Model) clickIndexItem(idx int) (tea.Model, tea.Cmd) {
 
 	case indexKindSpec:
 		m.index.ExpandedSpecs[item.idx] = !m.index.ExpandedSpecs[item.idx]
-		m.buildIndexItems()
-		m.index.Cursor = 0
-		for i, it := range m.index.Items {
-			if it.kind == indexKindSpec && it.idx == item.idx {
-				m.index.Cursor = i
-				break
-			}
-		}
-		if m.index.Cursor >= len(m.index.Items) {
-			m.index.Cursor = max(0, len(m.index.Items)-1)
-		}
-		m.refreshIndexViewport()
+		m.toggleExpansion(indexKindSpec, item.idx)
 		return m, nil
 
 	case indexKindRequirement:
