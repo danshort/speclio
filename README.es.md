@@ -1,15 +1,15 @@
 **[English](README.md)** | **Español**
 
-# speclio
+# lectern
 
 Interfaz de terminal controlada por teclado para leer y navegar artefactos de proyectos [OpenSpec](https://github.com/openspec) — propuestas, diseños, specs y tareas.
 
-> **speclio es un fork de [dossier](https://github.com/fselich/dossier) de [fselich](https://github.com/fselich).** Se renombró a medida que diverge y se mantiene de forma independiente. Todo el crédito de la herramienta original es del autor upstream; consulta [LICENSE](LICENSE).
+> **lectern es un fork de [dossier](https://github.com/fselich/dossier) de [fselich](https://github.com/fselich).** Se renombró a medida que diverge y se mantiene de forma independiente. Todo el crédito de la herramienta original es del autor upstream; consulta [LICENSE](LICENSE).
 
 > Desarrollado con OpenSpec. Este repositorio contiene 12 archivos de spec de proyecto y más de 20 cambios archivados que documentan el historial completo de desarrollo de la herramienta.
 
 <p align="center">
-  <img src="docs/speclio.gif" alt="demo de speclio" />
+  <img src="docs/lectern.gif" alt="demo de lectern" />
 </p>
 
 ---
@@ -33,19 +33,19 @@ Interfaz de terminal controlada por teclado para leer y navegar artefactos de pr
 # Homebrew
 brew tap danshort/tap
 brew trust danshort/tap   # una vez: Homebrew requiere confiar en taps de terceros
-brew install speclio
+brew install lectern
 
 # Desde el código fuente
-git clone https://github.com/danshort/speclio
-cd speclio
-make build    # genera ./speclio
+git clone https://github.com/danshort/lectern
+cd lectern
+make build    # genera ./lectern
 make install  # instala mediante go install
 
 # Usando go install
-go install github.com/danshort/speclio/cmd/speclio@latest
+go install github.com/danshort/lectern/cmd/lectern@latest
 ```
 
-¿Quieres trabajar en speclio? Consulta [DEVELOPING.md](DEVELOPING.md) para compilar
+¿Quieres trabajar en lectern? Consulta [DEVELOPING.md](DEVELOPING.md) para compilar
 y ejecutar una versión de desarrollo junto a tu copia instalada.
 
 ---
@@ -55,13 +55,13 @@ y ejecutar una versión de desarrollo junto a tu copia instalada.
 Ejecutar desde la raíz de un proyecto OpenSpec:
 
 ```bash
-speclio
+lectern
 ```
 
 Ver un directorio de cambio concreto por ruta:
 
 ```bash
-speclio /ruta/a/openspec/changes/mi-cambio
+lectern /ruta/a/openspec/changes/mi-cambio
 ```
 
 ### Referencia de teclado
@@ -124,7 +124,7 @@ En modo foco de requisitos:
 
 ## Estructura de proyecto
 
-speclio espera un directorio `openspec/` en la raíz del proyecto:
+lectern espera un directorio `openspec/` en la raíz del proyecto:
 
 ```
 openspec/

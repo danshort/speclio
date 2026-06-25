@@ -1,5 +1,5 @@
-BIN := speclio
-CMD := ./cmd/speclio
+BIN := lectern
+CMD := ./cmd/lectern
 
 .PHONY: build install test lint fmt clean
 

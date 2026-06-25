@@ -6,7 +6,7 @@ import (
 
 	tea "charm.land/bubbletea/v2"
 	"charm.land/glamour/v2"
-	"github.com/danshort/speclio/internal/openspec"
+	"github.com/danshort/lectern/internal/openspec"
 )
 
 func (m *Model) loadViewport() tea.Cmd {

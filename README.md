@@ -1,15 +1,15 @@
 **English** | **[Español](README.es.md)**
 
-# speclio
+# lectern
 
 A keyboard-driven terminal UI for reading and navigating [OpenSpec](https://github.com/openspec) project artifacts — proposals, designs, specs, and tasks.
 
-> **speclio is a fork of [dossier](https://github.com/fselich/dossier) by [fselich](https://github.com/fselich).** It was renamed as it diverges and is maintained independently. All credit for the original tool goes to the upstream author; see [LICENSE](LICENSE).
+> **lectern is a fork of [dossier](https://github.com/fselich/dossier) by [fselich](https://github.com/fselich).** It was renamed as it diverges and is maintained independently. All credit for the original tool goes to the upstream author; see [LICENSE](LICENSE).
 
 > Built with OpenSpec. This repository contains 12 project-level spec files and 20+ archived changes that document the complete development history of the tool.
 
 <p align="center">
-  <img src="docs/speclio.gif" alt="speclio demo" />
+  <img src="docs/lectern.gif" alt="lectern demo" />
 </p>
 
 ---
@@ -33,19 +33,19 @@ A keyboard-driven terminal UI for reading and navigating [OpenSpec](https://gith
 # Homebrew
 brew tap danshort/tap
 brew trust danshort/tap   # one-time: Homebrew requires trusting third-party taps
-brew install speclio
+brew install lectern
 
 # From source
-git clone https://github.com/danshort/speclio
-cd speclio
-make build    # produces ./speclio
+git clone https://github.com/danshort/lectern
+cd lectern
+make build    # produces ./lectern
 make install  # installs via go install
 
 # Using go install
-go install github.com/danshort/speclio/cmd/speclio@latest
+go install github.com/danshort/lectern/cmd/lectern@latest
 ```
 
-Hacking on speclio itself? See [DEVELOPING.md](DEVELOPING.md) for building and
+Hacking on lectern itself? See [DEVELOPING.md](DEVELOPING.md) for building and
 running a dev version alongside your installed copy.
 
 ---
@@ -55,13 +55,13 @@ running a dev version alongside your installed copy.
 Run from the root of an OpenSpec project:
 
 ```bash
-speclio
+lectern
 ```
 
 View a single change directory by path:
 
 ```bash
-speclio /path/to/openspec/changes/my-change
+lectern /path/to/openspec/changes/my-change
 ```
 
 ### Keyboard reference
@@ -124,7 +124,7 @@ In requirement focus mode:
 
 ## Project structure
 
-speclio expects an `openspec/` directory at the project root:
+lectern expects an `openspec/` directory at the project root:
 
 ```
 openspec/

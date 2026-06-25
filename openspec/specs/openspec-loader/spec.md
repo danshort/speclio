@@ -10,11 +10,11 @@ Loads and exposes the openspec project structure from the working directory: act
 The loader SHALL look for the `openspec/` directory relative to the current working directory on startup. The `Load()` function SHALL delegate to `LoadFrom(os.Getwd())` internally. If the directory does not exist or if `os.Getwd()` fails, the loader SHALL return an error.
 
 #### Scenario: openspec presente
-- **WHEN** `speclio` is run in a directory that contains `openspec/`
+- **WHEN** `lectern` is run in a directory that contains `openspec/`
 - **THEN** the loader loads the structure without error
 
 #### Scenario: openspec ausente
-- **WHEN** `speclio` is run in a directory without `openspec/`
+- **WHEN** `lectern` is run in a directory without `openspec/`
 - **THEN** the program terminates with an error message indicating the openspec directory was not found
 
 ### Requirement: Listar changes activos

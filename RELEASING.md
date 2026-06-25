@@ -15,7 +15,7 @@ merge a feature PR ──▶ release-please opens/updates a
                       ──▶ Homebrew tap formula updated to X.Y.Z
         │
         ▼
- teammates: brew update && brew upgrade speclio
+ teammates: brew update && brew upgrade lectern
 ```
 
 Both steps run in a single workflow (`.github/workflows/release.yml`) on every
@@ -74,12 +74,12 @@ These only need to be done once for the repository.
    built-in `GITHUB_TOKEN`. (Alternative: give the workflow a PAT.)
 
 2. **Create the Homebrew tap repo.** A public repo named `danshort/homebrew-tap`.
-   GoReleaser commits the generated `Formula/speclio.rb` there on each release.
+   GoReleaser commits the generated `Formula/lectern.rb` there on each release.
 
 3. **Create the tap token + secret.** A
    [fine-grained PAT](https://github.com/settings/tokens) scoped to **only**
    `danshort/homebrew-tap` with **Contents: Read and write**, stored as the
-   `HOMEBREW_TAP_TOKEN` secret on `danshort/speclio`.
+   `HOMEBREW_TAP_TOKEN` secret on `danshort/lectern`.
 
    > Why a separate token? `secrets.GITHUB_TOKEN` can only write to the repo the
    > workflow runs in. Pushing the formula to a *different* repo needs its own token.
@@ -94,8 +94,8 @@ These only need to be done once for the repository.
 
    ```bash
    brew update
-   brew upgrade speclio   # first time: brew tap danshort/tap && brew trust danshort/tap && brew install speclio
-   speclio --version
+   brew upgrade lectern   # first time: brew tap danshort/tap && brew trust danshort/tap && brew install lectern
+   lectern --version
    ```
 
 That's it — no manual tagging. (To force a release with no qualifying commits,
@@ -118,7 +118,7 @@ go run github.com/goreleaser/goreleaser/v2@latest check
 
 ## Versioning notes
 
-- The binary reports its version via `speclio --version`, injected at build time
+- The binary reports its version via `lectern --version`, injected at build time
   through `-ldflags "-X main.version={{ .Version }}"` — do not hard-code it.
 - release-please tracks the current version in `.release-please-manifest.json`;
   `release-please-config.json` configures it (`release-type: go`).
