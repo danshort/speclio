@@ -1290,6 +1290,9 @@ func TestClickArchivedArtifact(t *testing.T) {
 	m := newArchiveExpandModel()
 	m.index.ExpandedArchives[0] = true
 	m.buildIndexItems()
+	// Drive the production render path before hit-testing so this stays valid
+	// once the line→item map is emitted by renderIndexContent (PR4).
+	m.refreshIndexViewport()
 
 	// Locate the "tasks" sub-item.
 	tasksIdx := -1
