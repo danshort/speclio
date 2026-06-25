@@ -1,6 +1,7 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"os"
 
@@ -12,24 +13,30 @@ import (
 var version string
 
 func main() {
-	var (
-		project *openspec.Project
-		err     error
-		model   ui.Model
-	)
+	var showVersion bool
+	flag.BoolVar(&showVersion, "version", false, "print version and exit")
+	flag.BoolVar(&showVersion, "v", false, "print version and exit (shorthand)")
+	flag.Usage = func() {
+		fmt.Fprintln(os.Stderr, "Usage: lectern [flags] [path]")
+		fmt.Fprintln(os.Stderr)
+		fmt.Fprintln(os.Stderr, "A keyboard-driven TUI for navigating OpenSpec project artifacts.")
+		fmt.Fprintln(os.Stderr)
+		fmt.Fprintln(os.Stderr, "  path  Optional path to a change directory (single-change mode)")
+		fmt.Fprintln(os.Stderr)
+		fmt.Fprintln(os.Stderr, "Flags:")
+		flag.PrintDefaults()
+	}
+	flag.Parse()
 
-	if len(os.Args) > 1 && (os.Args[1] == "--version" || os.Args[1] == "-v") {
+	if showVersion {
 		fmt.Println("lectern", version)
-		os.Exit(0)
+		return
 	}
 
-	if len(os.Args) > 1 && (os.Args[1] == "--help" || os.Args[1] == "-h") {
-		fmt.Println("Usage: lectern [path]")
-		fmt.Println()
-		fmt.Println("A keyboard-driven TUI for navigating OpenSpec project artifacts.")
-		fmt.Println()
-		fmt.Println("  path  Optional path to a change directory (single-change mode)")
-		os.Exit(0)
+	if flag.NArg() > 1 {
+		fmt.Fprintln(os.Stderr, "error: too many arguments; expected at most one path")
+		flag.Usage()
+		os.Exit(1)
 	}
 
 	cwd, err := os.Getwd()
@@ -46,17 +53,21 @@ func main() {
 
 	loader := openspec.NewLoader(openspec.OSFS{})
 
-	if len(os.Args) > 1 {
-		project, err = openspec.LoadFromPath(os.Args[1])
+	var (
+		project *openspec.Project
+		model   ui.Model
+	)
+	if path := flag.Arg(0); path != "" {
+		project, err = openspec.LoadFromPath(path)
 		if err != nil {
 			fmt.Fprintln(os.Stderr, "error:", err)
 			os.Exit(1)
 		}
-		model = ui.NewSinglePath(project, cfg, os.Args[1], loader)
+		model = ui.NewSinglePath(project, cfg, path, loader)
 	} else {
 		project, err = openspec.LoadFrom(cwd)
 		if err != nil {
-			fmt.Fprintln(os.Stderr, err)
+			fmt.Fprintln(os.Stderr, "error:", err)
 			os.Exit(1)
 		}
 		model = ui.New(project, cfg, cwd, loader)
@@ -64,7 +75,7 @@ func main() {
 
 	p := tea.NewProgram(model)
 	if _, err := p.Run(); err != nil {
-		fmt.Fprintln(os.Stderr, err)
+		fmt.Fprintln(os.Stderr, "error:", err)
 		os.Exit(1)
 	}
 }
