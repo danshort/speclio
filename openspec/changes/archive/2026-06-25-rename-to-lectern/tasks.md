@@ -12,10 +12,10 @@
 ## 3. Repo & release
 
 - [x] 3.1 Rename GitHub repo `danshort/speclio` → `danshort/lectern`
-- [ ] 3.2 Post-merge: cut the `lectern` release (release-please) and remove the orphaned `speclio.rb` from the Homebrew tap
-- [ ] 3.3 Post-release: `brew uninstall speclio && brew install danshort/tap/lectern`
+- [x] 3.2 Post-merge: cut the `lectern` release (release-please) and remove the orphaned `speclio.rb` from the Homebrew tap
+- [x] 3.3 Post-release: `brew uninstall speclio && brew install danshort/tap/lectern`
 
 ## 4. Verification
 
 - [x] 4.1 `openspec validate rename-to-lectern --strict` passes
-- [ ] 4.2 Post-merge: PR passes the `lint`/`test` ruleset checks and squash-merges
+- [x] 4.2 Post-merge: PR passes the `lint`/`test` ruleset checks and squash-merges

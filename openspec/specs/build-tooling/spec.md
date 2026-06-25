@@ -1,9 +1,7 @@
 ## Purpose
 
 Defines how the project is built, installed, and cleaned. Establishes the binary name, entry point convention, and Makefile targets for local and system-wide installation.
-
 ## Requirements
-
 ### Requirement: Binary named lectern
 The project SHALL produce a binary named `lectern`. The entry point directory SHALL be `cmd/lectern/` so that `go install` names the binary by convention.
 
@@ -42,3 +40,4 @@ The project root SHALL NOT contain committed or untracked compiled binaries. A `
 #### Scenario: Compiled binaries are ignored by git
 - **WHEN** the developer builds the project
 - **THEN** `git status` does not show `lectern`, `main`, or `sv` as untracked files
+
