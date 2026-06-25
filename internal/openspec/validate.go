@@ -47,6 +47,11 @@ func ValidateChange(ch Change) []string {
 		errs = append(errs, "missing proposal.md")
 	}
 	for _, sf := range ch.SpecFiles {
+		if sf.ReadErr != nil {
+			// Unreadable delta spec: a read failure, not a structural one —
+			// surfaced elsewhere (⚠), never validated as malformed.
+			continue
+		}
 		errs = append(errs, validateDeltaSpec(sf.Name, sf.Content)...)
 	}
 	return errs
@@ -66,11 +71,11 @@ func requirementsMissingScenarios(lines []string, prefix string) []string {
 	}
 	for _, l := range lines {
 		switch {
-		case strings.HasPrefix(l, "### Requirement:"):
+		case strings.HasPrefix(l, reqPrefix):
 			flush()
-			curReq = strings.TrimSpace(strings.TrimPrefix(l, "### Requirement:"))
+			curReq = strings.TrimSpace(strings.TrimPrefix(l, reqPrefix))
 			hasScenario = false
-		case strings.HasPrefix(l, "#### Scenario:"):
+		case strings.HasPrefix(l, scenarioPrefix):
 			if curReq != "" {
 				hasScenario = true
 			}
@@ -119,11 +124,11 @@ func validateDeltaSpec(name, content string) []string {
 			continue
 		}
 		switch {
-		case strings.HasPrefix(l, "### Requirement:"):
+		case strings.HasPrefix(l, reqPrefix):
 			flush()
-			curReq = strings.TrimSpace(strings.TrimPrefix(l, "### Requirement:"))
+			curReq = strings.TrimSpace(strings.TrimPrefix(l, reqPrefix))
 			hasScenario = false
-		case strings.HasPrefix(l, "#### Scenario:"):
+		case strings.HasPrefix(l, scenarioPrefix):
 			if curReq != "" {
 				hasScenario = true
 			}

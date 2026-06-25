@@ -1,7 +1,9 @@
 package openspec
 
 import (
+	"errors"
 	"fmt"
+	"io/fs"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -12,14 +14,46 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
+// OpenSpec directory and artifact names, centralized so the layout lives in one
+// place (consumed by this package and by internal/ui path-building).
+const (
+	DirOpenspec = "openspec"
+	DirChanges  = "changes"
+	DirSpecs    = "specs"
+	DirArchive  = "archive"
+
+	FileProposal = "proposal.md"
+	FileDesign   = "design.md"
+	FileTasks    = "tasks.md"
+	FileSpec     = "spec.md"
+	FileConfig   = "config.yaml"
+	fileMeta     = ".openspec.yaml"
+
+	// reqPrefix / scenarioPrefix mark requirement and scenario headers. They omit
+	// the trailing space; matching uses HasPrefix + TrimSpace (so a line like
+	// "### Requirement: Name" yields "Name").
+	reqPrefix      = "### Requirement:"
+	scenarioPrefix = "#### Scenario:"
+
+	// unreadablePrefix begins the placeholder content of an artifact that exists
+	// but could not be read (its ReadErr is also set).
+	unreadablePrefix = "⚠ couldn't read "
+)
+
 type Artifact struct {
 	Content string
 	Present bool
+	// ReadErr is set when the file exists but could not be read (a non-not-found
+	// error). The artifact is still Present, with placeholder Content; callers
+	// surface it (a ⚠ marker, the placeholder on open) instead of treating it as
+	// absent or as a validation failure.
+	ReadErr error
 }
 
 type NamedSpec struct {
 	Name    string
 	Content string
+	ReadErr error
 }
 
 type Change struct {
@@ -44,6 +78,7 @@ type ProjectSpec struct {
 	RequirementCount int
 	RequirementNames []string
 	Content          string
+	ReadErr          error
 }
 
 type openspecMeta struct {
@@ -74,27 +109,20 @@ var defaultLoader = NewLoader(OSFS{})
 // ── *From(root) variants ──────────────────────────────────────────────────────
 
 func (l *Loader) LoadFrom(root string) (*Project, error) {
-	openspecDir := filepath.Join(root, "openspec")
-	if _, err := l.fs.Stat(openspecDir); os.IsNotExist(err) {
+	openspecDir := filepath.Join(root, DirOpenspec)
+	if _, err := l.fs.Stat(openspecDir); errors.Is(err, fs.ErrNotExist) {
 		return nil, fmt.Errorf("no openspec/ directory found in %s", root)
 	}
 
 	project := &Project{Name: filepath.Base(root)}
 
-	changesDir := filepath.Join(openspecDir, "changes")
-	entries, err := l.fs.ReadDir(changesDir)
+	changesDir := filepath.Join(openspecDir, DirChanges)
+	names, err := l.listDirs(changesDir, true)
 	if err != nil {
-		if os.IsNotExist(err) {
-			return project, nil
-		}
 		return nil, err
 	}
-
-	for _, e := range entries {
-		if !e.IsDir() || e.Name() == "archive" {
-			continue
-		}
-		ch := l.loadChangeFromDir(filepath.Join(changesDir, e.Name()), e.Name(), "")
+	for _, name := range names {
+		ch := l.loadChangeFromDir(filepath.Join(changesDir, name), name, "")
 		project.Changes = append(project.Changes, ch)
 	}
 
@@ -116,9 +144,9 @@ func (l *Loader) LoadFrom(root string) (*Project, error) {
 }
 
 func (l *Loader) LoadConfigFrom(root string) (ProjectConfig, error) {
-	data, err := l.fs.ReadFile(filepath.Join(root, "openspec", "config.yaml"))
+	data, err := l.fs.ReadFile(filepath.Join(root, DirOpenspec, FileConfig))
 	if err != nil {
-		if os.IsNotExist(err) {
+		if errors.Is(err, fs.ErrNotExist) {
 			return ProjectConfig{}, nil
 		}
 		return ProjectConfig{}, err
@@ -131,29 +159,31 @@ func (l *Loader) LoadConfigFrom(root string) (ProjectConfig, error) {
 }
 
 func (l *Loader) LoadProjectSpecsFrom(root string) ([]ProjectSpec, error) {
-	specsDir := filepath.Join(root, "openspec", "specs")
-	entries, err := l.fs.ReadDir(specsDir)
+	specsDir := filepath.Join(root, DirOpenspec, DirSpecs)
+	names, err := l.listDirs(specsDir, false)
 	if err != nil {
-		if os.IsNotExist(err) {
-			return nil, nil
-		}
 		return nil, err
 	}
 
-	specs := make([]ProjectSpec, 0, len(entries))
-	for _, e := range entries {
-		if !e.IsDir() {
-			continue
-		}
-		ps := ProjectSpec{Name: e.Name()}
-		if data, err := l.fs.ReadFile(filepath.Join(specsDir, e.Name(), "spec.md")); err == nil {
+	specs := make([]ProjectSpec, 0, len(names))
+	for _, name := range names {
+		ps := ProjectSpec{Name: name}
+		specPath := filepath.Join(specsDir, name, FileSpec)
+		data, readErr := l.fs.ReadFile(specPath)
+		switch {
+		case readErr == nil:
 			ps.Content = string(data)
 			for _, line := range splitLines(ps.Content) {
-				if strings.HasPrefix(line, "### Requirement: ") {
+				if strings.HasPrefix(line, reqPrefix) {
 					ps.RequirementCount++
-					ps.RequirementNames = append(ps.RequirementNames, strings.TrimPrefix(line, "### Requirement: "))
+					ps.RequirementNames = append(ps.RequirementNames, strings.TrimSpace(strings.TrimPrefix(line, reqPrefix)))
 				}
 			}
+		case errors.Is(readErr, fs.ErrNotExist):
+			// spec dir without a spec.md — leave empty (unchanged behavior).
+		default:
+			ps.ReadErr = readErr
+			ps.Content = unreadablePrefix + specPath + ": " + readErr.Error()
 		}
 		specs = append(specs, ps)
 	}
@@ -162,37 +192,14 @@ func (l *Loader) LoadProjectSpecsFrom(root string) ([]ProjectSpec, error) {
 }
 
 func (l *Loader) ListChangeNamesFrom(root string) ([]string, error) {
-	entries, err := l.fs.ReadDir(filepath.Join(root, "openspec", "changes"))
-	if err != nil {
-		if os.IsNotExist(err) {
-			return nil, nil
-		}
-		return nil, err
-	}
-	var names []string
-	for _, e := range entries {
-		if e.IsDir() && e.Name() != "archive" {
-			names = append(names, e.Name())
-		}
-	}
-	return names, nil
+	return l.listDirs(filepath.Join(root, DirOpenspec, DirChanges), true)
 }
 
 func (l *Loader) ListArchiveChangesFrom(root string) ([]Change, error) {
-	archiveDir := filepath.Join(root, "openspec", "changes", "archive")
-	entries, err := l.fs.ReadDir(archiveDir)
+	archiveDir := filepath.Join(root, DirOpenspec, DirChanges, DirArchive)
+	dirs, err := l.listDirs(archiveDir, false)
 	if err != nil {
-		if os.IsNotExist(err) {
-			return nil, nil
-		}
 		return nil, err
-	}
-
-	dirs := make([]string, 0, len(entries))
-	for _, e := range entries {
-		if e.IsDir() {
-			dirs = append(dirs, e.Name())
-		}
 	}
 	sort.Sort(sort.Reverse(sort.StringSlice(dirs)))
 
@@ -206,48 +213,51 @@ func (l *Loader) ListArchiveChangesFrom(root string) ([]Change, error) {
 }
 
 func (l *Loader) ListArchiveNamesFrom(root string) ([]string, error) {
-	entries, err := l.fs.ReadDir(filepath.Join(root, "openspec", "changes", "archive"))
+	names, err := l.listDirs(filepath.Join(root, DirOpenspec, DirChanges, DirArchive), false)
 	if err != nil {
-		if os.IsNotExist(err) {
-			return nil, nil
-		}
 		return nil, err
-	}
-	var names []string
-	for _, e := range entries {
-		if e.IsDir() {
-			names = append(names, e.Name())
-		}
 	}
 	sort.Sort(sort.Reverse(sort.StringSlice(names)))
 	return names, nil
 }
 
 func (l *Loader) ListSpecNamesFrom(root string) ([]string, error) {
-	entries, err := l.fs.ReadDir(filepath.Join(root, "openspec", "specs"))
+	names, err := l.listDirs(filepath.Join(root, DirOpenspec, DirSpecs), false)
 	if err != nil {
-		if os.IsNotExist(err) {
+		return nil, err
+	}
+	sort.Strings(names)
+	return names, nil
+}
+
+// listDirs returns the names of the immediate subdirectories of path, optionally
+// excluding the archive dir. A not-found path yields (nil, nil); other ReadDir
+// errors propagate. The single source for the package's directory enumeration.
+func (l *Loader) listDirs(path string, excludeArchive bool) ([]string, error) {
+	entries, err := l.fs.ReadDir(path)
+	if err != nil {
+		if errors.Is(err, fs.ErrNotExist) {
 			return nil, nil
 		}
 		return nil, err
 	}
 	var names []string
 	for _, e := range entries {
-		if e.IsDir() {
-			names = append(names, e.Name())
+		if !e.IsDir() || (excludeArchive && e.Name() == DirArchive) {
+			continue
 		}
+		names = append(names, e.Name())
 	}
-	sort.Strings(names)
 	return names, nil
 }
 
 // ── Path-based loader ─────────────────────────────────────────────────────────
 
 func (l *Loader) LoadFromPath(path string) (*Project, error) {
-	if _, err := l.fs.Stat(path); os.IsNotExist(err) {
+	if _, err := l.fs.Stat(path); errors.Is(err, fs.ErrNotExist) {
 		return nil, fmt.Errorf("path not found: %s", path)
 	}
-	if _, err := l.fs.Stat(filepath.Join(path, ".openspec.yaml")); os.IsNotExist(err) {
+	if _, err := l.fs.Stat(filepath.Join(path, fileMeta)); errors.Is(err, fs.ErrNotExist) {
 		return nil, fmt.Errorf("not a valid change directory (missing .openspec.yaml): %s", path)
 	}
 
@@ -261,10 +271,10 @@ func (l *Loader) LoadFromPath(path string) (*Project, error) {
 }
 
 func (l *Loader) ReloadChange(ch Change) Change {
-	ch.Proposal = l.loadFile(filepath.Join(ch.Path, "proposal.md"))
-	ch.Design = l.loadFile(filepath.Join(ch.Path, "design.md"))
-	ch.Tasks = l.loadFile(filepath.Join(ch.Path, "tasks.md"))
-	ch.Specs, ch.SpecFiles = l.loadSpecs(filepath.Join(ch.Path, "specs"))
+	ch.Proposal = l.loadFile(filepath.Join(ch.Path, FileProposal))
+	ch.Design = l.loadFile(filepath.Join(ch.Path, FileDesign))
+	ch.Tasks = l.loadFile(filepath.Join(ch.Path, FileTasks))
+	ch.Specs, ch.SpecFiles = l.loadSpecs(filepath.Join(ch.Path, DirSpecs))
 	return ch
 }
 
@@ -272,46 +282,54 @@ func (l *Loader) ReloadChange(ch Change) Change {
 
 func (l *Loader) loadChangeFromDir(dir, name, displayDate string) Change {
 	ch := Change{Name: name, Path: dir, DisplayDate: displayDate}
-	if raw, err := l.fs.ReadFile(filepath.Join(dir, ".openspec.yaml")); err == nil {
+	if raw, err := l.fs.ReadFile(filepath.Join(dir, fileMeta)); err == nil {
 		var m openspecMeta
 		// Ignore unmarshal errors: .openspec.yaml is optional metadata,
 		// missing or malformed fields are non-fatal.
 		_ = yaml.Unmarshal(raw, &m)
 		ch.Created = m.Created
 	}
-	ch.Proposal = l.loadFile(filepath.Join(dir, "proposal.md"))
-	ch.Design = l.loadFile(filepath.Join(dir, "design.md"))
-	ch.Tasks = l.loadFile(filepath.Join(dir, "tasks.md"))
-	ch.Specs, ch.SpecFiles = l.loadSpecs(filepath.Join(dir, "specs"))
+	ch.Proposal = l.loadFile(filepath.Join(dir, FileProposal))
+	ch.Design = l.loadFile(filepath.Join(dir, FileDesign))
+	ch.Tasks = l.loadFile(filepath.Join(dir, FileTasks))
+	ch.Specs, ch.SpecFiles = l.loadSpecs(filepath.Join(dir, DirSpecs))
 	return ch
 }
 
 func (l *Loader) loadFile(path string) Artifact {
 	data, err := l.fs.ReadFile(path)
 	if err != nil {
-		return Artifact{}
+		if errors.Is(err, fs.ErrNotExist) {
+			return Artifact{}
+		}
+		// Exists but unreadable: surface it rather than vanishing.
+		return Artifact{Present: true, ReadErr: err, Content: unreadablePrefix + path + ": " + err.Error()}
 	}
 	return Artifact{Content: string(data), Present: true}
 }
 
 func (l *Loader) loadSpecs(dir string) (Artifact, []NamedSpec) {
-	entries, err := l.fs.ReadDir(dir)
+	names, err := l.listDirs(dir, false)
 	if err != nil {
 		return Artifact{}, nil
 	}
 	var parts []string
 	var files []NamedSpec
-	for _, e := range entries {
-		if !e.IsDir() {
-			continue
+	for _, name := range names {
+		specPath := filepath.Join(dir, name, FileSpec)
+		data, readErr := l.fs.ReadFile(specPath)
+		switch {
+		case readErr == nil:
+			content := string(data)
+			files = append(files, NamedSpec{Name: name, Content: content})
+			parts = append(parts, "# "+name+"\n\n"+content)
+		case errors.Is(readErr, fs.ErrNotExist):
+			// spec dir without a spec.md — skip (unchanged behavior).
+		default:
+			ph := unreadablePrefix + specPath + ": " + readErr.Error()
+			files = append(files, NamedSpec{Name: name, Content: ph, ReadErr: readErr})
+			parts = append(parts, "# "+name+"\n\n"+ph)
 		}
-		data, err := l.fs.ReadFile(filepath.Join(dir, e.Name(), "spec.md"))
-		if err != nil {
-			continue
-		}
-		content := string(data)
-		files = append(files, NamedSpec{Name: e.Name(), Content: content})
-		parts = append(parts, "# "+e.Name()+"\n\n"+content)
 	}
 	if len(parts) == 0 {
 		return Artifact{}, nil
@@ -336,11 +354,10 @@ func parseArchiveName(dir string) (name, date string) {
 }
 
 func ExtractRequirement(raw, name string) string {
-	target := "### Requirement: " + name
 	lines := splitLines(raw)
 	start := -1
 	for i, l := range lines {
-		if l == target {
+		if strings.HasPrefix(l, reqPrefix) && strings.TrimSpace(strings.TrimPrefix(l, reqPrefix)) == name {
 			start = i
 			break
 		}
@@ -350,7 +367,7 @@ func ExtractRequirement(raw, name string) string {
 	}
 	block := []string{lines[start]}
 	for _, l := range lines[start+1:] {
-		if strings.HasPrefix(l, "### Requirement: ") {
+		if strings.HasPrefix(l, reqPrefix) {
 			break
 		}
 		block = append(block, l)

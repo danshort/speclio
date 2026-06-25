@@ -66,6 +66,10 @@ var (
 			Foreground(errorColor).
 			Bold(true)
 
+	warnStyle = lipgloss.NewStyle().
+			Foreground(sectionColor).
+			Bold(true)
+
 	progressDoneStyle = lipgloss.NewStyle().
 				Foreground(progressColor)
 

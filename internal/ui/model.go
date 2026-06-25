@@ -334,14 +334,14 @@ func (m *Model) artifactPath() string {
 	}
 	switch m.tab {
 	case TabProposal:
-		return filepath.Join(ch.Path, "proposal.md")
+		return filepath.Join(ch.Path, openspec.FileProposal)
 	case TabDesign:
-		return filepath.Join(ch.Path, "design.md")
+		return filepath.Join(ch.Path, openspec.FileDesign)
 	case TabTasks:
-		return filepath.Join(ch.Path, "tasks.md")
+		return filepath.Join(ch.Path, openspec.FileTasks)
 	case TabSpecs:
 		if m.specIdx < len(ch.SpecFiles) {
-			specsDir := filepath.Join(ch.Path, "specs")
+			specsDir := filepath.Join(ch.Path, openspec.DirSpecs)
 			entries, err := os.ReadDir(specsDir)
 			if err != nil {
 				return ""
@@ -352,7 +352,7 @@ func (m *Model) artifactPath() string {
 					continue
 				}
 				if dirIdx == m.specIdx {
-					p := filepath.Join(specsDir, e.Name(), "spec.md")
+					p := filepath.Join(specsDir, e.Name(), openspec.FileSpec)
 					if _, err := os.Stat(p); err == nil {
 						return p
 					}
@@ -372,7 +372,7 @@ func (m *Model) currentSpecPath() string {
 	if m.specViewer.Cursor < 0 || m.specViewer.Cursor >= len(m.projectSpecs) {
 		return ""
 	}
-	return filepath.Join(m.root, "openspec", "specs", m.projectSpecs[m.specViewer.Cursor].Name, "spec.md")
+	return filepath.Join(m.root, openspec.DirOpenspec, openspec.DirSpecs, m.projectSpecs[m.specViewer.Cursor].Name, openspec.FileSpec)
 }
 
 func (m *Model) currentArchive() *openspec.Change {

@@ -115,7 +115,11 @@ func (m *Model) loadViewportForSpec() tea.Cmd {
 
 	jumpTarget := m.specViewer.JumpTarget
 	renderInput := raw
-	if errs := openspec.ValidateSpec(raw); len(errs) > 0 {
+	// An unreadable spec carries placeholder content, not a real spec — a read
+	// failure is not a structural one, so skip the validation banner (it would
+	// spuriously report "missing Purpose/Requirements"). Mirrors the ⚠ marker.
+	unreadable := m.projectSpecs[m.specViewer.Cursor].ReadErr != nil
+	if errs := openspec.ValidateSpec(raw); !unreadable && len(errs) > 0 {
 		var b strings.Builder
 		b.WriteString("> ⚠ **Validation errors**\n>\n")
 		for _, e := range errs {

@@ -380,7 +380,7 @@ func (m *Model) renderIndexContent() (string, int) {
 			if cursor {
 				cursorLine = line
 			}
-			sb.WriteString(m.renderActiveItem(ch, cursor, contentWidth) + validationMarker(openspec.ValidateChange(ch)) + "\n")
+			sb.WriteString(m.renderActiveItem(ch, cursor, contentWidth) + m.changeMarker(ch) + "\n")
 			lineMap[line] = i
 			line++
 		}
@@ -437,7 +437,7 @@ func (m *Model) renderIndexContent() (string, int) {
 					cursorMark = progressDoneStyle.Render("▶") + " "
 					name = indexActiveStyle.Render(ps.Name)
 				}
-				sb.WriteString(cursorMark + name + pad + "  " + label + validationMarker(openspec.ValidateSpec(ps.Content)) + "\n")
+				sb.WriteString(cursorMark + name + pad + "  " + label + m.specMarker(ps) + "\n")
 				lineMap[line] = i
 				line++
 			} else {
@@ -526,6 +526,40 @@ func validationMarker(errs []string) string {
 		return ""
 	}
 	return " " + errStyle.Render("✗")
+}
+
+// unreadableMarker is the ⚠ shown for an item with an unreadable file. It
+// replaces the ✗ validation marker (a read failure is not a structural one).
+func unreadableMarker() string { return " " + warnStyle.Render("⚠") }
+
+// specMarker returns the ⚠ marker if the spec is unreadable, otherwise its
+// validation marker.
+func (m *Model) specMarker(ps openspec.ProjectSpec) string {
+	if ps.ReadErr != nil {
+		return unreadableMarker()
+	}
+	return validationMarker(openspec.ValidateSpec(ps.Content))
+}
+
+// changeMarker returns the ⚠ marker if any of the change's artifacts is
+// unreadable, otherwise its validation marker.
+func (m *Model) changeMarker(ch openspec.Change) string {
+	if changeHasReadErr(ch) {
+		return unreadableMarker()
+	}
+	return validationMarker(openspec.ValidateChange(ch))
+}
+
+func changeHasReadErr(ch openspec.Change) bool {
+	if ch.Proposal.ReadErr != nil || ch.Design.ReadErr != nil || ch.Tasks.ReadErr != nil {
+		return true
+	}
+	for _, sf := range ch.SpecFiles {
+		if sf.ReadErr != nil {
+			return true
+		}
+	}
+	return false
 }
 
 func (m *Model) renderActiveItem(ch openspec.Change, cursor bool, contentWidth int) string {
