@@ -21,6 +21,7 @@ const (
 	ModeViewingArchive
 	ModeViewingSpec
 	ModeViewingConfig
+	ModeWorktrees
 )
 
 type Tab int
@@ -71,6 +72,27 @@ type indexState struct {
 	FilterActive   bool
 	FilterIndices  []int
 	PrevFilterText string
+}
+
+// worktreeEntry pairs a discovered git worktree with its loaded active changes.
+type worktreeEntry struct {
+	wt      openspec.Worktree
+	changes []openspec.Change
+}
+
+// worktreeItem is a single navigable row in the worktrees view: a change at
+// changeIdx within entry wtIdx.
+type worktreeItem struct {
+	wtIdx     int
+	changeIdx int
+}
+
+type worktreesState struct {
+	Entries   []worktreeEntry
+	Items     []worktreeItem
+	Cursor    int
+	Available bool   // false when git is unavailable / not a working tree
+	Message   string // explanatory line shown when Available is false
 }
 
 type specViewerState struct {
@@ -140,6 +162,12 @@ type Model struct {
 	specViewer    specViewerState
 	projectConfig openspec.ProjectConfig
 	theme         Theme
+
+	worktrees worktreesState
+	// worktreeViewChange holds a foreign worktree's change while it is open
+	// read-only via the ModeViewingArchive path; viewingWorktreeChange gates it.
+	worktreeViewChange    openspec.Change
+	viewingWorktreeChange bool
 }
 
 func New(project *openspec.Project, cfg openspec.ProjectConfig, root string, loader *openspec.Loader) Model {
@@ -191,7 +219,7 @@ func (m Model) View() tea.View {
 	var content string
 	if m.mode == ModeViewingConfig {
 		content = m.viewContentWithChrome()
-	} else if m.mode == ModeIndex || m.mode == ModeViewingSpec {
+	} else if m.mode == ModeIndex || m.mode == ModeViewingSpec || m.mode == ModeWorktrees {
 		content = m.viewContentWithChrome()
 	} else if len(m.project.Changes) == 0 && m.mode == ModeNormal {
 		content = m.emptyViewContent()
@@ -347,6 +375,9 @@ func (m *Model) currentSpecPath() string {
 }
 
 func (m *Model) currentArchive() *openspec.Change {
+	if m.viewingWorktreeChange {
+		return &m.worktreeViewChange
+	}
 	if m.index.ArchiveCursor < len(m.index.ArchiveChanges) {
 		return &m.index.ArchiveChanges[m.index.ArchiveCursor]
 	}
@@ -364,7 +395,7 @@ const (
 )
 
 func (m *Model) contentHeight() int {
-	if m.mode == ModeIndex || m.mode == ModeViewingSpec || m.mode == ModeViewingConfig {
+	if m.mode == ModeIndex || m.mode == ModeViewingSpec || m.mode == ModeViewingConfig || m.mode == ModeWorktrees {
 		h := m.height - (chromeTop + chromeHeader + chromeInnerSep + chromeInnerSep + chromeHelpBar + chromeBottom)
 		if h < 1 {
 			h = 1

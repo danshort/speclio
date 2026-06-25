@@ -38,8 +38,18 @@ var helpCatalog = []helpGroup{
 			{"Space", "expand/collapse spec"},
 			{"/", "filter"},
 			{"s", "toggle spec sort"},
+			{"w", "worktrees view"},
 			{"i", "project config"},
 			{"Esc", "clear filter / quit"},
+		},
+	},
+	{
+		Title: "Worktrees",
+		Shortcuts: []shortcut{
+			{"j/k ↑↓", "navigate"},
+			{"Enter", "open change (read-only)"},
+			{"e", "edit artifact"},
+			{"a / Esc", "index"},
 		},
 	},
 	{

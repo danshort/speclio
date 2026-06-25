@@ -57,6 +57,9 @@ func (m *Model) renderHeader() string {
 	if m.mode == ModeIndex {
 		return headerStyle.Width(m.width - 2).Render(m.project.Name + "  ·  index")
 	}
+	if m.mode == ModeWorktrees {
+		return headerStyle.Width(m.width - 2).Render(m.project.Name + "  ·  worktrees")
+	}
 	if m.mode == ModeViewingSpec {
 		specName := ""
 		if m.specViewer.Cursor < len(m.projectSpecs) {
@@ -77,8 +80,12 @@ func (m *Model) renderHeader() string {
 		return headerStyle.Render(m.project.Name)
 	}
 	if m.mode == ModeViewingArchive {
+		tag := "[archive]"
+		if m.viewingWorktreeChange {
+			tag = "[worktree]"
+		}
 		return headerStyle.Width(m.width - 2).Render(
-			fmt.Sprintf("%s  ·  %s  [archive]", m.project.Name, ch.Name),
+			fmt.Sprintf("%s  ·  %s  %s", m.project.Name, ch.Name, tag),
 		)
 	}
 	nav := fmt.Sprintf("[%d/%d]", m.changeIdx+1, len(m.project.Changes))
@@ -191,11 +198,14 @@ func (m *Model) renderHelpBar() string {
 		if m.index.SortBySuffix {
 			sortHint = "s: sort by name"
 		}
-		text := "j/k: navigate  Enter: open  Space: expand  click: select  " + sortHint + "  i: info  ?: help  Esc: quit"
+		text := "j/k: navigate  Enter: open  Space: expand  click: select  " + sortHint + "  w: worktrees  i: info  ?: help  Esc: quit"
 		if m.index.FilterText != "" {
 			text += "  [/" + m.index.FilterText + "]"
 		}
 		return helpStyle.Render(text)
+	}
+	if m.mode == ModeWorktrees {
+		return helpStyle.Render("j/k: navigate  Enter: open (read-only)  ?: help  Esc: index  q: quit")
 	}
 	if m.mode == ModeViewingConfig {
 		return helpStyle.Render("j/k: scroll  i/Esc: back  ?: help  q: quit")
@@ -207,6 +217,9 @@ func (m *Model) renderHelpBar() string {
 		return helpStyle.Render("j/k: scroll  e: edit  Esc: index  ?: help  q: quit")
 	}
 	if m.mode == ModeViewingArchive {
+		if m.viewingWorktreeChange {
+			return helpStyle.Render("1-4/Tab: artifact  j/k: scroll  e: edit  ?: help  Esc: worktrees  q: quit")
+		}
 		return helpStyle.Render("1-4/Tab: artifact  j/k: scroll  a/Esc: index  ?: help  q: quit")
 	}
 	if m.tab == TabTasks {

@@ -20,6 +20,16 @@ func (m Model) updateViewer(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 		return m.commitStateChange()
 
 	case "a", "esc":
+		// A foreign worktree change returns to the worktrees view it was
+		// opened from, not the index.
+		if m.viewingWorktreeChange {
+			m.viewingWorktreeChange = false
+			m.renderCache = make(map[Tab]string)
+			m.mode = ModeWorktrees
+			m.vp.SetHeight(m.contentHeight())
+			m.refreshWorktreesViewport()
+			return m, nil
+		}
 		m.enterIndex()
 		return m, nil
 

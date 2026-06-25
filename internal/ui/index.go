@@ -12,7 +12,16 @@ import (
 )
 
 func (m *Model) handleTick() tea.Cmd {
-	if m.mode == ModeViewingArchive || m.mode == ModeViewingSpec {
+	if m.mode == ModeWorktrees {
+		return m.pollWorktrees()
+	}
+	if m.mode == ModeViewingArchive {
+		if m.viewingWorktreeChange {
+			return m.pollWorktreeChange()
+		}
+		return nil
+	}
+	if m.mode == ModeViewingSpec {
 		return nil
 	}
 	if m.mode == ModeIndex {
@@ -734,6 +743,10 @@ func (m Model) updateIndex(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 		m.prevMode = m.mode
 		m.mode = ModeViewingConfig
 		return m.commitStateChange()
+
+	case "w":
+		m.enterWorktrees()
+		return m, nil
 
 	case "esc":
 		if m.index.FilterText != "" {

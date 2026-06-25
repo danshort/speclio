@@ -132,6 +132,8 @@ func (m Model) dispatchKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 		return m.updateSpec(msg)
 	case ModeViewingConfig:
 		return m.updateConfig(msg)
+	case ModeWorktrees:
+		return m.updateWorktrees(msg)
 	}
 	return m, nil
 }

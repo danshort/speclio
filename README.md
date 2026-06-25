@@ -32,6 +32,7 @@ A keyboard-driven terminal UI for reading and navigating [OpenSpec](https://gith
 - Live-reloads on disk changes (500 ms polling)
 - Opens any artifact in `$EDITOR`
 - Shows a keyboard-shortcut overlay from any screen with `?`
+- Surveys every git worktree of the repository in one read-only view, with each worktree's active changes and live task progress
 - Accepts a path argument to view a single change directory without a full project
 
 ---
@@ -109,9 +110,29 @@ Press `?` on any screen to open an in-app overlay listing these shortcuts, group
 | `Space` | Expand / collapse a project spec |
 | `/` | Filter the list (type to narrow; `Enter` confirms, `Esc` cancels) |
 | `s` | Toggle spec sort (by name / by suffix) |
+| `w` | Open the worktrees view |
 | `i` | Open project config view |
 | `?` | Toggle keyboard-shortcut help |
 | `Esc` | Clear active filter, otherwise quit |
+| `q` / `Ctrl+C` | Quit |
+
+#### Worktrees mode (cross-worktree overview)
+
+Surveys the git worktrees of the current repository — useful when several agents
+work in sibling worktrees at once. Each worktree is listed with its branch (or a
+short HEAD SHA when detached) and its active changes with live task progress; the
+current worktree is shown first and badged `(current)`. Foreign changes open
+**read-only** (task toggling and in-place edits are disabled); `e` still opens the
+artifact in `$EDITOR`. Requires `git` on `PATH` — otherwise the view shows a single
+"unavailable" line.
+
+| Key | Action |
+|---|---|
+| `j` / `k` | Move cursor down / up |
+| `Enter` | Open the selected change read-only |
+| `e` | Open artifact in `$EDITOR` |
+| `?` | Toggle keyboard-shortcut help |
+| `a` / `Esc` | Return to index |
 | `q` / `Ctrl+C` | Quit |
 
 #### Archive mode (viewing an archived change)

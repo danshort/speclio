@@ -32,6 +32,7 @@ Interfaz de terminal controlada por teclado para leer y navegar artefactos de pr
 - Recarga en vivo ante cambios en disco (sondeo cada 500 ms)
 - Abre cualquier artefacto en `$EDITOR`
 - Muestra una superposición con los atajos de teclado desde cualquier pantalla con `?`
+- Inspecciona en una vista de solo lectura cada worktree de git del repositorio, con los cambios activos de cada uno y su progreso de tareas en vivo
 - Acepta una ruta como argumento para ver un cambio concreto sin necesitar un proyecto completo
 
 ---
@@ -109,9 +110,30 @@ Pulsa `?` en cualquier pantalla para abrir una superposición con estos atajos, 
 | `Space` | Expandir / contraer una spec de proyecto |
 | `/` | Filtrar la lista (escribe para acotar; `Enter` confirma, `Esc` cancela) |
 | `s` | Alternar el orden de las specs (por nombre / por sufijo) |
+| `w` | Abrir la vista de worktrees |
 | `i` | Abrir la vista de configuración del proyecto |
 | `?` | Alternar la ayuda de atajos de teclado |
 | `Esc` | Limpiar el filtro activo; si no hay, salir |
+| `q` / `Ctrl+C` | Salir |
+
+#### Modo worktrees (resumen entre worktrees)
+
+Inspecciona los worktrees de git del repositorio actual — útil cuando varios
+agentes trabajan en worktrees hermanos a la vez. Cada worktree aparece con su rama
+(o un SHA corto de HEAD cuando está en HEAD desacoplado) y sus cambios activos con
+el progreso de tareas en vivo; el worktree actual se muestra primero con la
+insignia `(current)`. Los cambios ajenos se abren en **solo lectura** (no se pueden
+marcar tareas ni editar in situ); `e` sigue abriendo el artefacto en `$EDITOR`.
+Requiere `git` en el `PATH` — de lo contrario la vista muestra una única línea de
+"no disponible".
+
+| Tecla | Acción |
+|---|---|
+| `j` / `k` | Mover cursor hacia abajo / arriba |
+| `Enter` | Abrir el cambio seleccionado en solo lectura |
+| `e` | Abrir artefacto en `$EDITOR` |
+| `?` | Alternar la ayuda de atajos de teclado |
+| `a` / `Esc` | Volver al índice |
 | `q` / `Ctrl+C` | Salir |
 
 #### Modo archivo (viendo un cambio archivado)

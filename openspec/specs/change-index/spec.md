@@ -241,3 +241,14 @@ When a filter is active, an archived artifact sub-item SHALL be considered a mat
 #### Scenario: Sub-items remain visible when the parent change matches
 - **WHEN** the mode is `ModeIndex`, an archived change named "data-export" is expanded, and the user types `/data`
 - **THEN** the "data-export" archived change and its visible artifact sub-items remain shown
+
+### Requirement: Open the worktrees view from the index
+While the mode is `ModeIndex`, pressing `w` SHALL switch the mode to `ModeWorktrees`. The index helpbar SHALL advertise this with a static `w` affordance. The index SHALL NOT compute or display live cross-worktree counts, so that opening the index does not trigger any cross-worktree discovery or polling.
+
+#### Scenario: Pressing w opens the worktrees view
+- **WHEN** the mode is `ModeIndex` and the user presses `w`
+- **THEN** the mode switches to `ModeWorktrees`
+
+#### Scenario: Helpbar advertises the worktrees view
+- **WHEN** the mode is `ModeIndex`
+- **THEN** the helpbar includes a static `w` entry for the worktrees view and shows no live cross-worktree counts
