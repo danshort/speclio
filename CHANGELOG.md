@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.19.0](https://github.com/danshort/lectern/compare/v0.18.0...v0.19.0) (2026-06-25)
+
+
+### Features
+
+* navigate sub-specs with [/] and clickable chips, drop 3-cycle ([#51](https://github.com/danshort/lectern/issues/51)) ([#54](https://github.com/danshort/lectern/issues/54)) ([98ad067](https://github.com/danshort/lectern/commit/98ad067f42acdf60326846aaf992528625b0d78f))
+
+
+### Bug Fixes
+
+* normalize CRLF when parsing specs and tasks ([#43](https://github.com/danshort/lectern/issues/43)) ([d541c24](https://github.com/danshort/lectern/commit/d541c2497bd68ee992bc3fc9a15823ac2c879c37))
+* surface unreadable files instead of silently dropping them ([#36](https://github.com/danshort/lectern/issues/36)) ([#52](https://github.com/danshort/lectern/issues/52)) ([6479362](https://github.com/danshort/lectern/commit/6479362a5b1aadc747889996d47f52375665e0f8))
+
 ## [0.18.0](https://github.com/danshort/lectern/compare/v0.17.0...v0.18.0) (2026-06-25)
 
 
