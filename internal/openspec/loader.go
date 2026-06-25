@@ -147,7 +147,7 @@ func (l *Loader) LoadProjectSpecsFrom(root string) ([]ProjectSpec, error) {
 		ps := ProjectSpec{Name: e.Name()}
 		if data, err := l.fs.ReadFile(filepath.Join(specsDir, e.Name(), "spec.md")); err == nil {
 			ps.Content = string(data)
-			for _, line := range strings.Split(ps.Content, "\n") {
+			for _, line := range splitLines(ps.Content) {
 				if strings.HasPrefix(line, "### Requirement: ") {
 					ps.RequirementCount++
 					ps.RequirementNames = append(ps.RequirementNames, strings.TrimPrefix(line, "### Requirement: "))
@@ -330,7 +330,7 @@ func parseArchiveName(dir string) (name, date string) {
 
 func ExtractRequirement(raw, name string) string {
 	target := "### Requirement: " + name
-	lines := strings.Split(raw, "\n")
+	lines := splitLines(raw)
 	start := -1
 	for i, l := range lines {
 		if l == target {

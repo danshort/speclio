@@ -26,7 +26,7 @@ func hasHeader(lines []string, header string) bool {
 // contain at least one "#### Scenario:". It returns one message per violation;
 // an empty result means the spec is valid.
 func ValidateSpec(content string) []string {
-	lines := strings.Split(content, "\n")
+	lines := splitLines(content)
 	var errs []string
 	if !hasHeader(lines, "## Purpose") {
 		errs = append(errs, `missing "## Purpose" section`)
@@ -88,7 +88,7 @@ func requirementsMissingScenarios(lines []string, prefix string) []string {
 // delta header, and every requirement under an ADDED/MODIFIED section must have
 // a scenario (REMOVED/RENAMED sections are exempt).
 func validateDeltaSpec(name, content string) []string {
-	lines := strings.Split(content, "\n")
+	lines := splitLines(content)
 
 	hasDelta := false
 	for _, l := range lines {

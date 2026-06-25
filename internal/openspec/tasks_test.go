@@ -3,8 +3,71 @@ package openspec
 import (
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 )
+
+// TestCRLFHandling pins the behavior that CRLF-authored files parse identically
+// to LF ones, and that the task write path preserves CRLF rather than rewriting
+// the whole file to LF.
+func TestCRLFHandling(t *testing.T) {
+	t.Run("ParseTasks strips trailing CR from text", func(t *testing.T) {
+		items := ParseTasks("## Section A\r\n- [ ] pending\r\n- [x] done\r\n")
+		if len(items) != 3 {
+			t.Fatalf("expected 3 items, got %d", len(items))
+		}
+		for _, it := range items {
+			if strings.HasSuffix(it.Text, "\r") {
+				t.Errorf("item text has trailing CR: %q", it.Text)
+			}
+		}
+		if items[1].Text != "pending" || !items[2].Done {
+			t.Errorf("unexpected parse: %+v", items)
+		}
+	})
+
+	t.Run("ExtractRequirement matches a CRLF spec", func(t *testing.T) {
+		raw := "# Spec\r\n\r\n### Requirement: Login\r\nBody.\r\n\r\n### Requirement: Logout\r\nBye.\r\n"
+		got := ExtractRequirement(raw, "Login")
+		if !strings.Contains(got, "Body.") {
+			t.Errorf("expected Login block with body, got %q", got)
+		}
+		if strings.Contains(got, "Logout") {
+			t.Error("block should stop before the next requirement")
+		}
+	})
+
+	t.Run("ValidateSpec accepts a valid CRLF spec", func(t *testing.T) {
+		raw := "## Purpose\r\nP.\r\n\r\n## Requirements\r\n\r\n### Requirement: R\r\n#### Scenario: S\r\n- **WHEN** a\r\n- **THEN** b\r\n"
+		if errs := ValidateSpec(raw); len(errs) != 0 {
+			t.Errorf("expected valid CRLF spec, got errors: %v", errs)
+		}
+	})
+
+	t.Run("ToggleTask preserves CRLF line endings", func(t *testing.T) {
+		dir := t.TempDir()
+		path := filepath.Join(dir, "tasks.md")
+		content := "## Section\r\n- [ ] do thing\r\n"
+		if err := os.WriteFile(path, []byte(content), 0644); err != nil {
+			t.Fatal(err)
+		}
+		items := ParseTasks(content)
+		idx := -1
+		for i, it := range items {
+			if it.Kind == KindTask {
+				idx = i
+				break
+			}
+		}
+		if err := ToggleTask(path, items, idx); err != nil {
+			t.Fatal(err)
+		}
+		data, _ := os.ReadFile(path)
+		if got := string(data); got != "## Section\r\n- [x] do thing\r\n" {
+			t.Errorf("CRLF not preserved on toggle: %q", got)
+		}
+	})
+}
 
 func TestParseTasks(t *testing.T) {
 	t.Run("sections and tasks", func(t *testing.T) {

@@ -25,8 +25,20 @@ var (
 	rxDone    = regexp.MustCompile(`^- \[x\] (.+)$`)
 )
 
+// splitLines splits s on "\n" and strips a trailing "\r" from each line, so
+// CRLF-authored files parse identically to LF ones. Use it for parsing and
+// content matching — NOT on a write path that rejoins and persists the file,
+// since that would rewrite CRLF line endings to LF.
+func splitLines(s string) []string {
+	lines := strings.Split(s, "\n")
+	for i := range lines {
+		lines[i] = strings.TrimSuffix(lines[i], "\r")
+	}
+	return lines
+}
+
 func ParseTasks(content string) []TaskItem {
-	lines := strings.Split(content, "\n")
+	lines := splitLines(content)
 	items := make([]TaskItem, 0, len(lines))
 	for i, line := range lines {
 		switch {
