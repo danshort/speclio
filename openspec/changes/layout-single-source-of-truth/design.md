@@ -26,7 +26,7 @@ Key observation: `renderIndexContent` **already** computes each item's `line` (i
 
 **1. Emit, don't re-derive.** The renderer produces the layout facts as a byproduct and they are consumed for hit-testing:
 - `renderTabBar` returns the tab x-ranges it laid out (measured with `lipgloss.Width`).
-- `renderIndexContent` returns a line→item map (`[]int` indexed by content line, value = raw item index or -1) — capturing the `line` it already tracks.
+- `renderIndexContent` captures a line→item map (`map[int]int` from content line to raw item index; absent key = not an item line, via comma-ok) — recording the `line` it already tracks.
 - The chrome-row composition is expressed as one ordered list per mode; `View()` renders it and `contentHeight()` derives the viewport height as `terminal height − (chrome rows)`.
 
 *Why over "carefully keep them in sync":* render-position and hit-test become the **same data**, so they cannot disagree by construction. The round-trip property (item rendered at line L ⇒ click at L resolves to that item) holds automatically rather than being a thing tests must police forever.
