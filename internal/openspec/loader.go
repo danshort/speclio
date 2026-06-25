@@ -322,7 +322,7 @@ func parseArchiveName(dir string) (name, date string) {
 	if len(dir) > 11 && dir[4] == '-' && dir[7] == '-' && dir[10] == '-' {
 		t, err := time.Parse("2006-01-02", dir[:10])
 		if err == nil {
-			return dir[11:], t.Format("02/01/2006")
+			return dir[11:], t.Format("2006-01-02")
 		}
 	}
 	return dir, ""

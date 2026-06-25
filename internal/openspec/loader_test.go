@@ -300,6 +300,39 @@ func TestListArchiveChangesFrom(t *testing.T) {
 	})
 }
 
+func TestParseArchiveName(t *testing.T) {
+	tests := []struct {
+		name     string
+		dir      string
+		wantName string
+		wantDate string
+	}{
+		{
+			name:     "dated archive renders ISO 8601 date",
+			dir:      "2026-05-02-specs-subnav",
+			wantName: "specs-subnav",
+			wantDate: "2026-05-02",
+		},
+		{
+			name:     "name without date prefix is returned as-is",
+			dir:      "specs-subnav",
+			wantName: "specs-subnav",
+			wantDate: "",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			gotName, gotDate := parseArchiveName(tt.dir)
+			if gotName != tt.wantName {
+				t.Errorf("name = %q, want %q", gotName, tt.wantName)
+			}
+			if gotDate != tt.wantDate {
+				t.Errorf("date = %q, want %q", gotDate, tt.wantDate)
+			}
+		})
+	}
+}
+
 func TestListArchiveNamesFrom(t *testing.T) {
 	t.Run("with entries", func(t *testing.T) {
 		root := t.TempDir()

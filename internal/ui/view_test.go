@@ -119,7 +119,7 @@ func TestBuildIndexItems(t *testing.T) {
 	t.Run("with active changes specs and archived", func(t *testing.T) {
 		m.index.ExpandedSpecs = make(map[int]bool)
 		m.index.ArchiveChanges = []openspec.Change{
-			{Name: "old-feat", DisplayDate: "01/05/2026"},
+			{Name: "old-feat", DisplayDate: "2026-05-01"},
 		}
 		m.buildIndexItems()
 		if len(m.index.Items) != 4 {
@@ -699,7 +699,7 @@ func TestMatchesFilter(t *testing.T) {
 		index: indexState{
 			ExpandedSpecs: make(map[int]bool),
 			ArchiveChanges: []openspec.Change{
-				{Name: "refactor-tick", DisplayDate: "30/05/2026"},
+				{Name: "refactor-tick", DisplayDate: "2026-05-30"},
 			},
 		},
 	}
