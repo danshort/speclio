@@ -2,6 +2,21 @@
 
 # Changelog
 
+## [0.16.0](https://github.com/danshort/speclio/compare/v0.15.0...v0.16.0) (2026-06-25)
+
+
+### Features
+
+* arrow keys switch tabs when viewing a change ([#6](https://github.com/danshort/speclio/issues/6)) ([f8639b7](https://github.com/danshort/speclio/commit/f8639b7662113acf16aeb07985c5b46acc77a7f6))
+* validate specs and changes, surface errors in UI ([#5](https://github.com/danshort/speclio/issues/5)) ([3578e3b](https://github.com/danshort/speclio/commit/3578e3b59e2e6d48474c2c5626bf039c6b00cdf1))
+
+
+### Bug Fixes
+
+* archive tasks-tab arrows ([#7](https://github.com/danshort/speclio/issues/7)), dim-text contrast ([#4](https://github.com/danshort/speclio/issues/4)); add DEVELOPING.md ([621a65e](https://github.com/danshort/speclio/commit/621a65e4499af02b5503355c94e15ea56ab94569))
+* **ci:** release-please should use v-prefixed tags (not speclio-v) ([#13](https://github.com/danshort/speclio/issues/13)) ([c02ab28](https://github.com/danshort/speclio/commit/c02ab286c6c3c8c5a3ddf66e897b5536e6b9552c))
+* **openspec:** normalize openspec-root-path spec header ([b93bb63](https://github.com/danshort/speclio/commit/b93bb6337fb71f4391ca306592c3b199e2d65d45))
+
 ## v0.15.0
 
 ### Changed
