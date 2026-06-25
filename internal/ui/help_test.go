@@ -108,6 +108,8 @@ func TestHelpOverlayContent(t *testing.T) {
 		"Global", "Index", "Change viewer", "Archive viewer", "Spec viewer", "Config viewer",
 		// representative shortcuts
 		"j/k", "Enter", "Space", "1-4", "h / l", "q / Ctrl+C",
+		// spec sub-navigation in the change/archive viewers
+		"[ / ]",
 		// arrow aliases must be documented (j/k↔↑↓ and Tab↔←→)
 		"↑↓", "Tab/Shift+Tab/←→",
 	}

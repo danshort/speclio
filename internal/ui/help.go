@@ -58,6 +58,7 @@ var helpCatalog = []helpGroup{
 			{"h / l", "previous/next change"},
 			{"1-4", "proposal/design/specs/tasks"},
 			{"Tab/Shift+Tab/←→", "cycle artifacts"},
+			{"[ / ]", "previous/next spec"},
 			{"j/k ↑↓", "navigate tasks / scroll"},
 			{"Space", "toggle task"},
 			{"e", "edit artifact"},
@@ -70,6 +71,7 @@ var helpCatalog = []helpGroup{
 		Shortcuts: []shortcut{
 			{"1-4", "proposal/design/specs/tasks"},
 			{"Tab/Shift+Tab/←→", "cycle artifacts"},
+			{"[ / ]", "previous/next spec"},
 			{"j/k ↑↓", "scroll"},
 			{"e", "edit artifact"},
 			{"i", "project config"},

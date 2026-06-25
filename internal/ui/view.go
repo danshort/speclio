@@ -224,20 +224,48 @@ func (m *Model) renderTabBar() string {
 	return tabs
 }
 
+// styledSpec renders the spec chip at index i with its active/inactive style.
+// Both styles share Padding(0, 1), so the chip's width is independent of which
+// one is active — which is why specRanges is stable. Shared by renderSpecSubnav
+// and specRanges so hit-testing cannot drift from the rendered chip row.
+func (m *Model) styledSpec(ch *openspec.Change, i int) string {
+	name := ch.SpecFiles[i].Name
+	if i == m.specIdx {
+		return tabActiveStyle.Render(name)
+	}
+	return tabInactiveStyle.Render(name)
+}
+
 func (m *Model) renderSpecSubnav() string {
 	ch := m.current()
 	if ch == nil {
 		return ""
 	}
-	var parts []string
-	for i, s := range ch.SpecFiles {
-		if i == m.specIdx {
-			parts = append(parts, tabActiveStyle.Render(s.Name))
-		} else {
-			parts = append(parts, tabInactiveStyle.Render(s.Name))
-		}
+	parts := make([]string, 0, len(ch.SpecFiles))
+	for i := range ch.SpecFiles {
+		parts = append(parts, m.styledSpec(ch, i))
 	}
 	return strings.Join(parts, " ")
+}
+
+// specRanges returns each spec chip's inclusive screen-X span on the sub-nav
+// row, derived from the same styled widths renderSpecSubnav lays out (measured
+// with lipgloss.Width) and the single-space join — the spec-chip analogue of
+// tabRanges, so click hit-testing cannot drift from the rendered row. Returns
+// nil when there is no current change.
+func (m *Model) specRanges() []tabRange {
+	ch := m.current()
+	if ch == nil {
+		return nil
+	}
+	ranges := make([]tabRange, len(ch.SpecFiles))
+	x := 1 // first column past the left │ border
+	for i := range ch.SpecFiles {
+		w := lipgloss.Width(m.styledSpec(ch, i))
+		ranges[i] = tabRange{start: x, end: x + w - 1}
+		x += w + 1 // +1 for the single-space join between chips
+	}
+	return ranges
 }
 
 func (m *Model) hasSpecSubnav() bool {
@@ -305,10 +333,17 @@ func (m *Model) renderHelpBar() string {
 		return helpStyle.Render("j/k: scroll  e: edit  Esc: index  ?: help  q: quit")
 	}
 	if m.mode == ModeViewingArchive {
-		if m.viewingWorktreeChange {
-			return helpStyle.Render("1-4/Tab: artifact  j/k: scroll  e: edit  ?: help  Esc: worktrees  q: quit")
+		specHint := ""
+		if m.tab == TabSpecs && m.hasMultipleSpecs() {
+			specHint = "[/]: spec  "
 		}
-		return helpStyle.Render("1-4/Tab: artifact  j/k: scroll  a/Esc: index  ?: help  q: quit")
+		if m.viewingWorktreeChange {
+			return helpStyle.Render("1-4/Tab: artifact  " + specHint + "j/k: scroll  e: edit  ?: help  Esc: worktrees  q: quit")
+		}
+		return helpStyle.Render("1-4/Tab: artifact  " + specHint + "j/k: scroll  a/Esc: index  ?: help  q: quit")
+	}
+	if m.tab == TabSpecs && m.hasMultipleSpecs() {
+		return helpStyle.Render("h/l: change  1-4/Tab/←→: artifact  [/]: spec  j/k: scroll  e: edit  i: info  ?: help  Esc: index  q: quit")
 	}
 	if m.tab == TabTasks {
 		return helpStyle.Render("h/l: change  1-4/Tab/←→: artifact  j/k: navigate  Space: toggle  e: edit  i: info  ?: help  Esc: index  q: quit")

@@ -85,10 +85,11 @@ Press `?` on any screen to open an in-app overlay listing these shortcuts, group
 | `h` / `l` | Previous / next change |
 | `1` | Proposal tab |
 | `2` | Design tab |
-| `3` | Specs tab (press again to cycle through multiple spec files) |
+| `3` | Specs tab |
 | `4` | Tasks tab |
 | `Tab` / `Shift+Tab` | Next / previous tab |
 | `←` / `→` | Previous / next tab (mirrors `Shift+Tab` / `Tab`) |
+| `[` / `]` | Previous / next spec (specs tab, when the change has multiple specs; or click a spec chip) |
 | `j` / `down` | Scroll down (or move task cursor down) |
 | `k` / `up` | Scroll up (or move task cursor up) |
 | `Space` | Toggle task under cursor (tasks tab only) |

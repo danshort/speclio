@@ -1,8 +1,19 @@
-# specs-subnav Specification
+## RENAMED Requirements
 
-## Purpose
-Implements the sub-navigation chip row visible in the `specs` tab, which displays the available specs of a change and lets the user move between them with `[` / `]` or by clicking a chip.
-## Requirements
+- FROM: `### Requirement: Sub-navegación de specs`
+- TO: `### Requirement: Specs sub-navigation chip row`
+
+- FROM: `### Requirement: Ajuste de altura de contenido con sub-nav visible`
+- TO: `### Requirement: Content height adjustment when the sub-nav is visible`
+
+## REMOVED Requirements
+
+### Requirement: Ciclo de specs con tecla 3
+**Reason**: The `3` key's forward-only cycle was undiscoverable and one-directional, leaving users stuck on the first spec of a multi-spec change. It is replaced by bidirectional `[` / `]` navigation and left-click chip selection (see the new "Spec navigation with `[`, `]`, and mouse click" requirement). The `3` key now behaves as a plain primary-tab selector, consistent with `1`, `2`, and `4`.
+**Migration**: To switch specs, press `[` (previous) or `]` (next), or left-click a spec chip. Pressing `3` selects the `specs` tab and no longer advances the spec.
+
+## MODIFIED Requirements
+
 ### Requirement: Specs sub-navigation chip row
 When the active tab is `specs` and at least one spec is available, the TUI SHALL display a chip row as the first line inside the content block, immediately after the horizontal separator (`├───┤`), showing the name of each spec. The chip of the currently visible spec SHALL be rendered with the active style (the same style as an active tab). The other chips SHALL be rendered with the inactive style. The row SHALL be static (it is not part of the scrollable viewport area). This applies identically in active changes (`ModeNormal`) and archived changes (`ModeViewingArchive`).
 
@@ -36,6 +47,8 @@ When the specs sub-nav is visible, the content area SHALL reduce its height by o
 #### Scenario: Normal height on other tabs
 - **WHEN** the active tab is `proposal`, `design`, or `tasks`
 - **THEN** the viewport has the standard height
+
+## ADDED Requirements
 
 ### Requirement: Spec navigation with `[`, `]`, and mouse click
 When the active tab is `specs` and the change has more than one spec, the user SHALL be able to move between specs with the secondary sub-navigation keys `[` (previous spec) and `]` (next spec), wrapping around at the ends, and SHALL be able to select a specific spec by left-clicking its chip. Selecting a spec SHALL update the visible spec content. This navigation SHALL behave identically in active changes (`ModeNormal`) and archived changes (`ModeViewingArchive`). When the change has a single spec, `[` and `]` SHALL have no effect. The `←` / `→` arrows SHALL NOT change the active spec (they remain primary tab navigation). The selected spec SHALL persist while the same change is viewed: switching to another primary tab and back to `specs` SHALL preserve the selected spec. The selection SHALL reset to the first spec only when the active change changes.
@@ -79,4 +92,3 @@ When the active tab is `specs` and the change has more than one spec, the user S
 #### Scenario: Switching change resets the selected spec
 - **WHEN** a non-first spec is active and the user moves to a different change with `h` or `l`
 - **THEN** the selected spec resets to the first spec of the new change
-

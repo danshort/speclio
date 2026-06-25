@@ -254,6 +254,13 @@ func (m *Model) current() *openspec.Change {
 	return &m.project.Changes[m.changeIdx]
 }
 
+// hasMultipleSpecs reports whether the current change has more than one spec
+// file — the precondition for spec sub-navigation (`[` / `]` and chip clicks).
+func (m *Model) hasMultipleSpecs() bool {
+	ch := m.current()
+	return ch != nil && len(ch.SpecFiles) > 1
+}
+
 func firstAvailableTab(ch openspec.Change) Tab {
 	if ch.Proposal.Present {
 		return TabProposal

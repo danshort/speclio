@@ -688,6 +688,7 @@ func (m Model) activateIndexItem(item indexItem) (tea.Model, tea.Cmd) {
 		m.changeIdx = item.idx
 		m.mode = ModeNormal
 		m.tab = m.defaultTab()
+		m.specIdx = 0
 		m.loadTaskItems()
 	case indexKindSpec:
 		m.specViewer.Cursor = item.idx
@@ -704,10 +705,12 @@ func (m Model) activateIndexItem(item indexItem) (tea.Model, tea.Cmd) {
 	case indexKindArchivedArtifact:
 		m.index.ArchiveCursor = item.idx
 		m.tab = Tab(item.reqIdx)
+		m.specIdx = 0
 		m.mode = ModeViewingArchive
 	case indexKindArchived:
 		m.index.ArchiveCursor = item.idx
 		m.tab = firstAvailableTab(m.index.ArchiveChanges[item.idx])
+		m.specIdx = 0
 		m.mode = ModeViewingArchive
 	}
 	return m.commitStateChange()

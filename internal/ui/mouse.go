@@ -84,6 +84,26 @@ func (m Model) handleMouseClick(msg tea.MouseClickMsg) (tea.Model, tea.Cmd) {
 		return m, nil
 	}
 
+	// Spec chip row: present (chromeRowIndex >= 0) only on the specs tab when
+	// the change has specs. Clicking a chip selects that spec; clicks between or
+	// outside chips are ignored.
+	if subRow := m.chromeRowIndex(rowSubnav); subRow >= 0 && msg.Y == subRow {
+		ranges := m.specRanges()
+		for i := range ranges {
+			if msg.X < ranges[i].start || msg.X > ranges[i].end {
+				continue
+			}
+			if i != m.specIdx {
+				m.specIdx = i
+				delete(m.renderCache, TabSpecs)
+				m.vp.SetHeight(m.contentHeight())
+				return m, m.loadViewport()
+			}
+			return m, nil
+		}
+		return m, nil
+	}
+
 	tabRow := m.chromeRowIndex(rowTabBar)
 	if tabRow < 0 || msg.Y != tabRow {
 		return m, nil
@@ -97,18 +117,9 @@ func (m Model) handleMouseClick(msg tea.MouseClickMsg) (tea.Model, tea.Cmd) {
 		if !m.tabAvailable(t) {
 			return m, nil
 		}
-		if t == TabSpecs && m.tab == TabSpecs {
-			ch := m.current()
-			if ch != nil && len(ch.SpecFiles) > 1 {
-				m.specIdx = (m.specIdx + 1) % len(ch.SpecFiles)
-				delete(m.renderCache, TabSpecs)
-			}
-		} else {
-			m.tab = t
-			if t == TabSpecs {
-				m.specIdx = 0
-			}
-		}
+		// Selecting the specs tab preserves specIdx (the last-viewed spec);
+		// switching specs is done via the chip row or [ / ].
+		m.tab = t
 		m.vp.SetHeight(m.contentHeight())
 		return m, m.loadViewport()
 	}

@@ -46,7 +46,7 @@ The TUI SHALL allow navigating between active changes with `h` (previous) and `l
 - **THEN** the TUI exits
 
 ### Requirement: Tabs de artifact
-The TUI SHALL show a tab bar with tabs `proposal`, `design`, `tasks`, `specs`. Tabs for absent artifacts SHALL be shown visually disabled and not selectable. The user SHALL be able to change tabs with keys `1`, `2`, `3`, `4`, with `Tab` / `→` (next available) and `Shift+Tab` / `←` (previous available), or by left-clicking on the tab label with the mouse. `Tab`, `Shift+Tab`, and the `←`/`→` arrows SHALL skip disabled tabs and wrap around at the ends; the arrows are secondary navigation that mirrors `Tab`/`Shift+Tab` and SHALL NOT cycle spec files. The `3` key SHALL have dual behavior: if the active tab is not `specs`, it switches to it; if it is already `specs`, it cycles to the next available spec. If an absent artifact appears on disk during the session, the corresponding tab SHALL be enabled without needing to restart the TUI.
+The TUI SHALL show a tab bar with tabs `proposal`, `design`, `tasks`, `specs`. Tabs for absent artifacts SHALL be shown visually disabled and not selectable. The user SHALL be able to change tabs with keys `1`, `2`, `3`, `4`, with `Tab` / `→` (next available) and `Shift+Tab` / `←` (previous available), or by left-clicking on the tab label with the mouse. `Tab`, `Shift+Tab`, and the `←`/`→` arrows SHALL skip disabled tabs and wrap around at the ends; the arrows are secondary navigation that mirrors `Tab`/`Shift+Tab` and SHALL NOT cycle spec files. The `3` key SHALL select the `specs` tab exactly like the other numeric keys select their tabs (`1`→`proposal`, `2`→`design`, `4`→`tasks`); it SHALL NOT cycle specs. Moving between specs is the responsibility of the secondary sub-navigation (`[` / `]`) defined below and in the `specs-subnav` capability. If an absent artifact appears on disk during the session, the corresponding tab SHALL be enabled without needing to restart the TUI.
 
 #### Scenario: Seleccionar tab disponible con tecla numérica
 - **WHEN** the user presses `2` and `design.md` exists
@@ -72,9 +72,9 @@ The TUI SHALL show a tab bar with tabs `proposal`, `design`, `tasks`, `specs`. T
 - **WHEN** the active tab is `proposal` and the user presses `3`
 - **THEN** the active tab changes to `specs`
 
-#### Scenario: Tecla 3 en specs cicla al siguiente spec
-- **WHEN** the active tab is `specs` and the user presses `3`
-- **THEN** the visible spec advances to the next one (wrapping to the first)
+#### Scenario: Tecla 3 en specs no cambia el spec activo
+- **WHEN** the active tab is already `specs`, the change has multiple specs, and the user presses `3`
+- **THEN** the active tab remains `specs` and the active spec does not change
 
 #### Scenario: Ciclar hacia adelante con Tab
 - **WHEN** the active tab is `proposal`, `design` is disabled, and `specs` is available
@@ -138,15 +138,19 @@ The user SHALL be able to exit the TUI at any time with `q` or `Ctrl+C`.
 - **THEN** the TUI exits and the terminal is left in a clean state
 
 ### Requirement: Barra de ayuda de teclado
-The TUI SHALL show a fixed help line at the bottom with the active shortcuts in the current context.
+The TUI SHALL show a fixed help line at the bottom listing the shortcuts active in the current context. On the `specs` tab, when the change has more than one spec, the help line SHALL advertise `[` / `]` for moving between specs. The help line SHALL NOT advertise the removed `3`-cycle.
 
-#### Scenario: Tab de tasks seleccionada
+#### Scenario: Tasks tab help line
 - **WHEN** the active tab is `tasks` and the mode is `ModeNormal`
-- **THEN** the help line shows `h/l: change  1-4: artifact  j/k: navigate  Space: toggle  e: edit  Esc: index  q: quit`
+- **THEN** the help line includes a `h/l: change` hint, artifact navigation, `Space: toggle`, `e: edit`, and `Esc: index`
 
-#### Scenario: Tab de proposal/design/specs seleccionada
-- **WHEN** the active tab is `proposal`, `design`, or `specs` and the mode is `ModeNormal`
-- **THEN** the help line shows `h/l: change  1-4: artifact  j/k: scroll  e: edit  Esc: index  q: quit`
+#### Scenario: Specs tab advertises spec navigation
+- **WHEN** the active tab is `specs` with more than one spec and the mode is `ModeNormal`
+- **THEN** the help line includes a `[` / `]` hint for previous/next spec
+
+#### Scenario: Proposal or design tab help line
+- **WHEN** the active tab is `proposal` or `design` and the mode is `ModeNormal`
+- **THEN** the help line includes a `h/l: change` hint, artifact navigation, `j/k: scroll`, `e: edit`, and `Esc: index`
 
 ### Requirement: Polling periódico de artifacts
 The TUI SHALL start a polling cycle every 500 ms on startup. On each tick it SHALL compare the on-disk content of the artifacts of the currently visible change with the in-memory content, AND detect changes in artifact presence (absent → present). If at the moment of the tick `len(m.project.Changes) == 0`, the tick SHALL attempt to reload the change list from disk and adopt the new state if at least one change is available. The cycle SHALL continue while the TUI is active.
@@ -215,7 +219,6 @@ When the user toggles a task with `Space`, the progress counter in the tab bar S
 - **WHEN** the user presses `Space` on a completed task and the disk write succeeds
 - **THEN** the `N/M` counter and the progress bar in the tab bar decrement immediately in the same render
 
-
 ### Requirement: Viewport height derived from the rendered chrome rows
 
 The TUI SHALL size the content viewport from the same ordered list of chrome rows that `View()` renders, rather than from an independently maintained sum of layout constants. In every mode that renders a content viewport, the total number of rendered lines SHALL equal the terminal height. The empty-project welcome view, which renders fixed content without a sized viewport, is the single exception.
@@ -244,3 +247,23 @@ The TUI SHALL size the content viewport from the same ordered list of chrome row
 
 - **WHEN** the specs tab is active and the spec subnav row is present
 - **THEN** the viewport is exactly one row shorter and the total rendered height still equals the terminal height
+
+### Requirement: Secondary sub-navigation convention
+The viewer MAY render a secondary sub-navigation row (a chip row) inside the content block, below the primary artifact tab bar, for a tab that contains multiple sub-items. Wherever such a sub-nav is present, the user SHALL move between its items with `[` (previous item) and `]` (next item), wrapping around at the ends, and SHALL be able to select an item by left-clicking its chip. The primary tab-navigation keys (`1`–`4`, `Tab`/`Shift+Tab`, `←`/`→`) SHALL continue to operate on the primary tab bar only and SHALL NOT move between secondary sub-items. When no secondary sub-nav is present, `[` and `]` SHALL have no effect. The specs chip row is the only secondary sub-nav today (see the `specs-subnav` capability); any future sub-nav inherits this convention.
+
+#### Scenario: `]` advances the secondary sub-nav
+- **WHEN** a tab with a multi-item secondary sub-nav is active and the user presses `]`
+- **THEN** the next sub-item becomes active, wrapping to the first after the last
+
+#### Scenario: `[` goes back in the secondary sub-nav
+- **WHEN** a tab with a multi-item secondary sub-nav is active and the user presses `[`
+- **THEN** the previous sub-item becomes active, wrapping to the last before the first
+
+#### Scenario: Primary keys do not move secondary sub-items
+- **WHEN** a tab with a secondary sub-nav is active and the user presses `Tab`
+- **THEN** the active artifact tab changes and the secondary sub-item selection is governed only by `[` / `]` and clicks
+
+#### Scenario: `[` / `]` are inert without a sub-nav
+- **WHEN** the active tab has no secondary sub-nav (e.g. `proposal`) and the user presses `[` or `]`
+- **THEN** nothing changes and no error occurs
+
