@@ -212,7 +212,7 @@ func (m *Model) renderHelpBar() string {
 	}
 	if m.mode == ModeViewingSpec {
 		if m.specViewer.FocusMode {
-			return helpStyle.Render("h/l: req anterior/siguiente  j/k: scroll  e: edit  Esc: index  ?: help  q: quit")
+			return helpStyle.Render("h/l: prev/next req  j/k: scroll  e: edit  Esc: index  ?: help  q: quit")
 		}
 		return helpStyle.Render("j/k: scroll  e: edit  Esc: index  ?: help  q: quit")
 	}

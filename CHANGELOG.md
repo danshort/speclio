@@ -1,5 +1,3 @@
-**English** | **[Español](CHANGELOG.es.md)**
-
 # Changelog
 
 ## [0.17.0](https://github.com/danshort/lectern/compare/v0.16.0...v0.17.0) (2026-06-25)
