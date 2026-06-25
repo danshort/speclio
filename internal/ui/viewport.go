@@ -192,7 +192,7 @@ func (m *Model) loadViewportForArtifact() tea.Cmd {
 }
 
 func (m *Model) renderWidth() int {
-	width := m.width - 2
+	width := m.innerWidth()
 	if width < 20 {
 		width = 80
 	}

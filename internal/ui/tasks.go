@@ -113,7 +113,7 @@ func inlineMarkdown(s, restore string, done bool) string {
 func (m *Model) renderTasksContent() (string, int) {
 	var sb strings.Builder
 	line, cursorLine := 0, 0
-	contentWidth := m.width - 2
+	contentWidth := m.innerWidth()
 
 	pendingRestore := extractOpeningEscape(taskPendingStyle)
 	doneRestore := extractOpeningEscape(taskDoneStyle)

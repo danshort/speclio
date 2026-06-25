@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"regexp"
 	"sort"
 	"strings"
 	"time"
@@ -318,14 +319,20 @@ func (l *Loader) loadSpecs(dir string) (Artifact, []NamedSpec) {
 	return Artifact{Content: strings.Join(parts, "\n\n---\n\n"), Present: true}, files
 }
 
+// archivePrefixRe matches an archived change dir like "2026-06-24-my-change":
+// group 1 is the ISO date prefix, group 2 the remaining change name.
+var archivePrefixRe = regexp.MustCompile(`^(\d{4}-\d{2}-\d{2})-(.+)$`)
+
 func parseArchiveName(dir string) (name, date string) {
-	if len(dir) > 11 && dir[4] == '-' && dir[7] == '-' && dir[10] == '-' {
-		t, err := time.Parse("2006-01-02", dir[:10])
-		if err == nil {
-			return dir[11:], t.Format("2006-01-02")
-		}
+	m := archivePrefixRe.FindStringSubmatch(dir)
+	if m == nil {
+		return dir, ""
 	}
-	return dir, ""
+	t, err := time.Parse("2006-01-02", m[1])
+	if err != nil {
+		return dir, ""
+	}
+	return m[2], t.Format("2006-01-02")
 }
 
 func ExtractRequirement(raw, name string) string {
