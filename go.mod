@@ -1,4 +1,4 @@
-module github.com/danshort/speclio
+module github.com/danshort/lectern
 
 go 1.25.8
 

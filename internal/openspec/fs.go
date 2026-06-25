@@ -11,7 +11,7 @@ type fileSystem interface {
 
 type OSFS struct{}
 
-// speclio is a local, single-user tool that reads and writes files in the
+// lectern is a local, single-user tool that reads and writes files in the
 // user's own project at the user's own privilege level. Paths are built from
 // fixed artifact names joined to directory entries discovered via ReadDir, so
 // there is no privilege boundary or untrusted input being crossed here.
