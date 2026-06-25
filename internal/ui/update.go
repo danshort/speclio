@@ -16,10 +16,10 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.height = msg.Height
 		contentH := m.contentHeight()
 		if !m.vpReady {
-			m.vp = viewport.New(viewport.WithWidth(m.width-2), viewport.WithHeight(contentH))
+			m.vp = viewport.New(viewport.WithWidth(m.innerWidth()), viewport.WithHeight(contentH))
 			m.vpReady = true
 		} else {
-			m.vp.SetWidth(m.width - 2)
+			m.vp.SetWidth(m.innerWidth())
 			m.vp.SetHeight(contentH)
 		}
 		m.renderCache = make(map[Tab]string)

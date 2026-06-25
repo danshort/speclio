@@ -412,6 +412,14 @@ func (m *Model) contentHeight() int {
 	return h
 }
 
+// innerWidth is the content width inside the box's two vertical border columns.
+func (m *Model) innerWidth() int {
+	if m.width < 2 {
+		return 0
+	}
+	return m.width - 2
+}
+
 // mergeReloadedChange updates in-memory state from a freshly reloaded Change
 // and returns which artifacts changed. It does not handle cursor preservation
 // or viewport refresh — the caller handles those.

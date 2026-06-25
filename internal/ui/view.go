@@ -52,13 +52,13 @@ func (m *Model) emptyViewContent() string {
 
 func (m *Model) renderHeader() string {
 	if m.mode == ModeViewingConfig {
-		return headerStyle.Width(m.width - 2).Render(m.project.Name + "  ·  project config")
+		return headerStyle.Width(m.innerWidth()).Render(m.project.Name + "  ·  project config")
 	}
 	if m.mode == ModeIndex {
-		return headerStyle.Width(m.width - 2).Render(m.project.Name + "  ·  index")
+		return headerStyle.Width(m.innerWidth()).Render(m.project.Name + "  ·  index")
 	}
 	if m.mode == ModeWorktrees {
-		return headerStyle.Width(m.width - 2).Render(m.project.Name + "  ·  worktrees")
+		return headerStyle.Width(m.innerWidth()).Render(m.project.Name + "  ·  worktrees")
 	}
 	if m.mode == ModeViewingSpec {
 		specName := ""
@@ -67,11 +67,11 @@ func (m *Model) renderHeader() string {
 		}
 		if m.specViewer.FocusMode && m.specViewer.Cursor < len(m.projectSpecs) {
 			ps := m.projectSpecs[m.specViewer.Cursor]
-			return headerStyle.Width(m.width - 2).Render(
+			return headerStyle.Width(m.innerWidth()).Render(
 				fmt.Sprintf("%s  ·  %s  ·  Req %d/%d", m.project.Name, specName, m.specViewer.ReqCursor+1, len(ps.RequirementNames)),
 			)
 		}
-		return headerStyle.Width(m.width - 2).Render(
+		return headerStyle.Width(m.innerWidth()).Render(
 			fmt.Sprintf("%s  ·  %s  [spec]", m.project.Name, specName),
 		)
 	}
@@ -84,12 +84,12 @@ func (m *Model) renderHeader() string {
 		if m.viewingWorktreeChange {
 			tag = "[worktree]"
 		}
-		return headerStyle.Width(m.width - 2).Render(
+		return headerStyle.Width(m.innerWidth()).Render(
 			fmt.Sprintf("%s  ·  %s  %s", m.project.Name, ch.Name, tag),
 		)
 	}
 	nav := fmt.Sprintf("[%d/%d]", m.changeIdx+1, len(m.project.Changes))
-	return headerStyle.Width(m.width - 2).Render(
+	return headerStyle.Width(m.innerWidth()).Render(
 		fmt.Sprintf("%s  ·  %s  %s", m.project.Name, ch.Name, nav),
 	)
 }
@@ -128,7 +128,7 @@ func (m *Model) renderTabBar() string {
 	}
 	if total > 0 {
 		label := fmt.Sprintf(" %d/%d", done, total)
-		barSpace := (m.width - 2) - lipgloss.Width(tabs) - 3 - len(label)
+		barSpace := (m.innerWidth()) - lipgloss.Width(tabs) - 3 - len(label)
 		if barSpace >= 3 {
 			tabs = tabs + " [" + renderProgressBar(done, total, barSpace, "█", "░") + "]" + helpStyle.Render(label)
 		}
@@ -158,15 +158,15 @@ func (m *Model) hasSpecSubnav() bool {
 }
 
 func (m *Model) boxTop() string {
-	return separatorStyle.Render("┌" + strings.Repeat("─", m.width-2) + "┐")
+	return separatorStyle.Render("┌" + strings.Repeat("─", m.innerWidth()) + "┐")
 }
 
 func (m *Model) boxBottom() string {
-	return separatorStyle.Render("└" + strings.Repeat("─", m.width-2) + "┘")
+	return separatorStyle.Render("└" + strings.Repeat("─", m.innerWidth()) + "┘")
 }
 
 func (m *Model) boxInnerSep() string {
-	return separatorStyle.Render("├" + strings.Repeat("─", m.width-2) + "┤")
+	return separatorStyle.Render("├" + strings.Repeat("─", m.innerWidth()) + "┤")
 }
 
 func (m *Model) addBorderSides(content string) string {
@@ -174,7 +174,7 @@ func (m *Model) addBorderSides(content string) string {
 	for len(lines) > 0 && lines[len(lines)-1] == "" {
 		lines = lines[:len(lines)-1]
 	}
-	inner := m.width - 2
+	inner := m.innerWidth()
 	result := make([]string, 0, len(lines))
 	for _, line := range lines {
 		pad := inner - lipgloss.Width(line)

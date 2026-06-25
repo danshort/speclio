@@ -107,7 +107,7 @@ func worktreeHeader(wt openspec.Worktree) string {
 }
 
 func (m *Model) renderWorktreesContent() (string, int) {
-	contentWidth := m.width - 2
+	contentWidth := m.innerWidth()
 	var sb strings.Builder
 	line := 0
 	cursorLine := 0
