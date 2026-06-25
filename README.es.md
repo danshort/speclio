@@ -2,6 +2,16 @@
 
 # lectern
 
+<p align="center">
+  <a href="https://github.com/danshort/lectern/actions/workflows/ci.yml"><img src="https://img.shields.io/github/actions/workflow/status/danshort/lectern/ci.yml?branch=main&label=CI" alt="estado de CI" /></a>
+  <a href="https://github.com/danshort/lectern/releases"><img src="https://img.shields.io/github/v/release/danshort/lectern" alt="Última versión" /></a>
+  <a href="go.mod"><img src="https://img.shields.io/github/go-mod/go-version/danshort/lectern" alt="Versión de Go" /></a>
+  <a href="https://goreportcard.com/report/github.com/danshort/lectern"><img src="https://goreportcard.com/badge/github.com/danshort/lectern" alt="Go Report Card" /></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue" alt="Licencia: MIT" /></a>
+  <a href="https://github.com/danshort/lectern/issues"><img src="https://img.shields.io/github/issues/danshort/lectern" alt="Issues abiertos" /></a>
+  <a href="https://github.com/openspec"><img src="https://img.shields.io/badge/built%20with-OpenSpec-6f42c1" alt="Desarrollado con OpenSpec" /></a>
+</p>
+
 Interfaz de terminal controlada por teclado para leer y navegar artefactos de proyectos [OpenSpec](https://github.com/openspec) — propuestas, diseños, specs y tareas.
 
 > **lectern es un fork de [dossier](https://github.com/fselich/dossier) de [fselich](https://github.com/fselich).** Se renombró a medida que diverge y se mantiene de forma independiente. Todo el crédito de la herramienta original es del autor upstream; consulta [LICENSE](LICENSE).
