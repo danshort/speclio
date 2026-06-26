@@ -8,6 +8,9 @@ import Markdown
 
 struct MarkdownView: View {
     private let document: Document
+    // Larger-than-default base that still scales with the system text size
+    // (Dynamic Type), instead of a fixed point size.
+    @ScaledMetric(relativeTo: .body) private var bodySize: CGFloat = 15
 
     init(_ text: String) {
         self.document = Document(parsing: text)
@@ -19,7 +22,7 @@ struct MarkdownView: View {
                 BlockView(markup: child)
             }
         }
-        .font(.system(size: 15))
+        .font(.system(size: bodySize))
         .lineSpacing(6)
         .textSelection(.enabled)
     }

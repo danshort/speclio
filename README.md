@@ -58,6 +58,32 @@ go install github.com/danshort/lectern/cmd/lectern@latest
 Hacking on lectern itself? See [DEVELOPING.md](DEVELOPING.md) for building and
 running a dev version alongside your installed copy.
 
+### macOS app (preview)
+
+A native SwiftUI reader is in development under [`macos/`](macos/) — it reuses the
+same domain logic as the CLI (the `OpenSpecKit` Swift port of `internal/openspec`,
+kept byte-for-byte in sync via a shared golden corpus). It presents changes,
+specs, worktrees, and config with native markdown rendering and interactive task
+toggling.
+
+Build and run it from source (requires Xcode):
+
+```bash
+cd macos/LecternApp
+swift run            # opens the app; ⌘O to choose a project folder
+```
+
+Package a distributable `.app`:
+
+```bash
+macos/LecternApp/scripts/package.sh 0.1.0   # → macos/LecternApp/dist/Lectern.app + .zip
+```
+
+> **First launch (preview builds):** preview builds are ad-hoc signed but not yet
+> notarized, so Gatekeeper blocks the first open. Right-click **Lectern.app** →
+> **Open** once (or `xattr -dr com.apple.quarantine /Applications/Lectern.app`).
+> This step goes away once notarized builds ship.
+
 ---
 
 ## Usage

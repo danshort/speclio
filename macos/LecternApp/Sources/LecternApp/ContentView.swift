@@ -23,6 +23,7 @@ struct ContentView: View {
                 .labelsHidden()
                 .fixedSize()
                 .disabled(model.project == nil)
+                .accessibilityLabel("View mode")
             }
             ToolbarItem {
                 Menu {
@@ -236,6 +237,9 @@ struct TasksView: View {
                         }
                     }
                     .buttonStyle(.plain)
+                    .accessibilityLabel(item.text)
+                    .accessibilityValue(item.done ? "completed" : "not completed")
+                    .accessibilityHint("Toggles this task")
                 }
             }
         }
