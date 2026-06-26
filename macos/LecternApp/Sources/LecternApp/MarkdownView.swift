@@ -14,11 +14,13 @@ struct MarkdownView: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 10) {
+        VStack(alignment: .leading, spacing: 16) {
             ForEach(Array(document.children.enumerated()), id: \.offset) { _, child in
                 BlockView(markup: child)
             }
         }
+        .font(.system(size: 15))
+        .lineSpacing(6)
         .textSelection(.enabled)
     }
 }
@@ -33,7 +35,8 @@ struct BlockView: View {
             Text(InlineText.attributed(heading))
                 .font(headingFont(heading.level))
                 .bold()
-                .padding(.top, heading.level <= 2 ? 6 : 2)
+                .padding(.top, heading.level <= 2 ? 12 : 6)
+                .padding(.bottom, 2)
 
         case let paragraph as Paragraph:
             Text(InlineText.attributed(paragraph))
@@ -96,7 +99,7 @@ struct ListView: View {
     let ordered: Bool
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 4) {
+        VStack(alignment: .leading, spacing: 7) {
             ForEach(Array(items.enumerated()), id: \.offset) { index, item in
                 HStack(alignment: .top, spacing: 8) {
                     Text(ordered ? "\(index + 1)." : "•")

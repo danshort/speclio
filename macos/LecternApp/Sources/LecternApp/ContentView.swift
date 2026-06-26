@@ -62,8 +62,12 @@ struct Sidebar: View {
         if changes.isEmpty {
             Text("Nothing here").foregroundStyle(.secondary)
         } else {
-            ForEach(changes, id: \.name) { change in
-                Section(change.name) { ArtifactRows(change: change) }
+            ForEach(changes, id: \.path) { change in
+                DisclosureGroup(isExpanded: model.changeExpansion(change)) {
+                    ArtifactRows(change: change)
+                } label: {
+                    ChangeLabel(change: change)
+                }
             }
         }
     }
@@ -100,6 +104,24 @@ struct Sidebar: View {
     }
 }
 
+struct ChangeLabel: View {
+    let change: Change
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 1) {
+            Text(change.name)
+                .font(.headline)
+                .lineLimit(1)
+            if !change.displayDate.isEmpty {
+                Text(change.displayDate)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+        }
+        .help(change.name)
+    }
+}
+
 struct ArtifactRows: View {
     let change: Change
 
@@ -111,7 +133,14 @@ struct ArtifactRows: View {
             row(.design, "Design", "pencil.and.outline")
         }
         if !change.specFiles.isEmpty {
-            SpecsGroup(change: change)
+            Label("Specs", systemImage: "folder")
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(.secondary)
+            ForEach(change.specFiles, id: \.name) { sf in
+                Label(sf.name, systemImage: "doc.plaintext")
+                    .tag(Selection.artifact(ArtifactRef(changeName: change.name, kind: .specFile(sf.name))))
+                    .padding(.leading, 14)
+            }
         }
         if change.tasks.present {
             row(.tasks, "Tasks", "checklist")
@@ -121,22 +150,6 @@ struct ArtifactRows: View {
     private func row(_ kind: ArtifactKind, _ title: String, _ icon: String) -> some View {
         Label(title, systemImage: icon)
             .tag(Selection.artifact(ArtifactRef(changeName: change.name, kind: kind)))
-    }
-}
-
-struct SpecsGroup: View {
-    let change: Change
-    @State private var expanded = true
-
-    var body: some View {
-        DisclosureGroup(isExpanded: $expanded) {
-            ForEach(change.specFiles, id: \.name) { sf in
-                Label(sf.name, systemImage: "doc.plaintext")
-                    .tag(Selection.artifact(ArtifactRef(changeName: change.name, kind: .specFile(sf.name))))
-            }
-        } label: {
-            Label("Specs", systemImage: "folder")
-        }
     }
 }
 

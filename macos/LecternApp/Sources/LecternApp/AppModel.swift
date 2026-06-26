@@ -35,9 +35,41 @@ enum Selection: Hashable {
 @MainActor
 final class AppModel: ObservableObject {
     @Published var mode: Mode = .activeChanges {
-        didSet { if mode != oldValue { selection = defaultSelection(for: mode) } }
+        didSet {
+            if mode != oldValue {
+                seedExpansion()
+                selection = defaultSelection(for: mode)
+            }
+        }
     }
     @Published var selection: Selection?
+
+    // Disclosure state lives in the model (not per-row @State), keyed by the
+    // change's unique path, so it survives List view recycling — the cause of
+    // the misrendered/ghosted rows. Active changes start expanded; archived
+    // start collapsed (there are dozens).
+    @Published var expandedChanges: Set<String> = []
+
+    func changeExpansion(_ change: Change) -> Binding<Bool> {
+        Binding(
+            get: { self.expandedChanges.contains(change.path) },
+            set: { open in
+                if open { self.expandedChanges.insert(change.path) }
+                else { self.expandedChanges.remove(change.path) }
+            }
+        )
+    }
+
+    private func seedExpansion() {
+        switch mode {
+        case .activeChanges:
+            expandedChanges = Set((project?.changes ?? []).map { $0.path })
+        case .archivedChanges:
+            expandedChanges = [] // collapsed by default
+        default:
+            break
+        }
+    }
 
     @Published var project: Project?
     @Published var archivedChanges: [Change] = []
@@ -107,6 +139,7 @@ final class AppModel: ObservableObject {
         projectSpecs = (try? loader.loadProjectSpecsFrom(url.path)) ?? []
         loadWorktrees(url.path)
 
+        seedExpansion()
         selection = defaultSelection(for: mode)
     }
 
