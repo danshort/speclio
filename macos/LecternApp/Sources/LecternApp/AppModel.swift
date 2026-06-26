@@ -81,6 +81,7 @@ final class AppModel: ObservableObject {
 
     private let bookmarkKey = "projectBookmark"
     private var accessedURL: URL?
+    private var watcher: DirectoryWatcher?
 
     init() {
         restoreBookmark()
@@ -101,7 +102,7 @@ final class AppModel: ObservableObject {
     }
 
     func reload() {
-        if let path = rootPath { load(URL(fileURLWithPath: path)) }
+        refreshData(resetSelection: false)
     }
 
     private func persistBookmark(for url: URL) {
@@ -125,22 +126,43 @@ final class AppModel: ObservableObject {
         _ = url.startAccessingSecurityScopedResource()
         accessedURL = url
         rootPath = url.path
+        refreshData(resetSelection: true)
+        startWatching(url.path)
+    }
 
+    // Reloads all data from disk, rebuilds the sidebar, and (unless resetting)
+    // preserves the current selection if it still exists — used by manual reload
+    // and by the FSEvents watcher (task 5.3).
+    private func refreshData(resetSelection: Bool) {
+        guard let path = rootPath else { return }
         let loader = Loader()
         do {
-            project = try loader.loadFrom(url.path)
+            project = try loader.loadFrom(path)
             loadError = nil
         } catch {
             project = nil
             loadError = describe(error)
         }
-        archivedChanges = (try? loader.listArchiveChangesFrom(url.path)) ?? []
-        projectSpecs = (try? loader.loadProjectSpecsFrom(url.path)) ?? []
-        projectConfig = try? loader.loadConfigFrom(url.path)
-        loadWorktrees(url.path)
+        archivedChanges = (try? loader.listArchiveChangesFrom(path)) ?? []
+        projectSpecs = (try? loader.loadProjectSpecsFrom(path)) ?? []
+        projectConfig = try? loader.loadConfigFrom(path)
+        loadWorktrees(path)
 
+        let previous = selectedNodeID
         rebuildSidebar()
-        selectDefault()
+        if !resetSelection, let previous, idToSelection[previous] != nil {
+            selectedNodeID = previous
+        } else {
+            selectDefault()
+        }
+    }
+
+    private func startWatching(_ root: String) {
+        let watched = (root as NSString).appendingPathComponent("openspec")
+        let target = FileManager.default.fileExists(atPath: watched) ? watched : root
+        watcher = DirectoryWatcher(path: target) { [weak self] in
+            Task { @MainActor in self?.refreshData(resetSelection: false) }
+        }
     }
 
     private func loadWorktrees(_ path: String) {
