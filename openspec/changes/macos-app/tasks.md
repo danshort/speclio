@@ -40,10 +40,10 @@
 
 ## 5. Interaction + OS integration (Phase 5)
 
-- [ ] 5.1 Task checkbox toggle through the CRLF-safe `toggleTask` with a re-read before write; integration test on LF and CRLF fixtures and on an externally-modified file
-- [ ] 5.2 Harden the worktrees `Process` invocation (5 s watchdog, error states) behind `GitService` — the Worktrees *view* itself lands in Phase 4 (4.8)
+- [x] 5.1 Task checkbox toggle through the CRLF-safe `toggleTask` with a re-read before write; integration test on LF and CRLF fixtures and on an externally-modified file
+- [x] 5.2 Harden the worktrees `Process` invocation (5 s watchdog, error states) behind `GitService` — the Worktrees *view* itself lands in Phase 4 (4.8)
 - [ ] 5.3 FSEvents live reload of `openspec/` (debounced); integration test that an external edit refreshes the view
-- [ ] 5.4 Open-in-editor / reveal-in-Finder (subject to the sandbox decision)
+- [x] 5.4 Open-in-editor / reveal-in-Finder (subject to the sandbox decision)
 
 ## 6. Packaging, signing, distribution (Phase 6)
 

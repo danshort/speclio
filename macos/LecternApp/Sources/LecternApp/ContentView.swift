@@ -25,10 +25,29 @@ struct ContentView: View {
                 .disabled(model.project == nil)
             }
             ToolbarItem {
+                Menu {
+                    Button("Reveal in Finder") { revealInFinder() }
+                    Button("Open in Default App") { openInEditor() }
+                } label: {
+                    Label("File actions", systemImage: "ellipsis.circle")
+                }
+                .disabled(model.currentFilePath() == nil)
+            }
+            ToolbarItem {
                 Button { model.reload() } label: { Label("Reload", systemImage: "arrow.clockwise") }
                     .disabled(model.project == nil)
             }
         }
+    }
+
+    private func revealInFinder() {
+        guard let path = model.currentFilePath() else { return }
+        NSWorkspace.shared.activateFileViewerSelecting([URL(fileURLWithPath: path)])
+    }
+
+    private func openInEditor() {
+        guard let path = model.currentFilePath() else { return }
+        NSWorkspace.shared.open(URL(fileURLWithPath: path))
     }
 }
 
@@ -158,12 +177,84 @@ struct ArtifactDetail: View {
     let ref: ArtifactRef
 
     var body: some View {
-        let artifact = model.artifact(for: ref, in: change)
-        if case .specFile(let name) = ref.kind {
+        switch ref.kind {
+        case .specFile(let name):
+            let artifact = model.artifact(for: ref, in: change)
             SpecContentView(artifact: artifact, issues: artifact.readError ? [] : validateChange(change))
                 .id("\(change.name)/spec/\(name)")
-        } else {
-            ScrollableContent { ArtifactBody(artifact: artifact) }
+        case .tasks:
+            TasksView(changePath: change.path)
+                .id("\(change.path)/tasks")
+        default:
+            ScrollableContent { ArtifactBody(artifact: model.artifact(for: ref, in: change)) }
+        }
+    }
+}
+
+// Interactive Tasks view: renders tasks.md as toggleable checkboxes. Toggling
+// re-reads and re-parses the file, finds the intended task by text, then writes
+// via OpenSpecKit.toggleTask (CRLF-safe), so an external edit between render and
+// click can't flip the wrong line (task 5.1).
+struct TasksView: View {
+    let changePath: String
+
+    @State private var items: [TaskItem] = []
+    @State private var errorText: String?
+
+    private var tasksPath: String { (changePath as NSString).appendingPathComponent("tasks.md") }
+
+    private var taskItems: [TaskItem] { items.filter { $0.kind == .task } }
+    private var doneCount: Int { taskItems.filter(\.done).count }
+
+    var body: some View {
+        ScrollableContent {
+            if let errorText {
+                Label(errorText, systemImage: "exclamationmark.triangle.fill")
+                    .foregroundStyle(.orange).font(.callout)
+            }
+            if !taskItems.isEmpty {
+                let total = taskItems.count
+                ProgressView(value: Double(doneCount), total: Double(total)) {
+                    Text("\(doneCount) of \(total) complete").font(.callout).foregroundStyle(.secondary)
+                }
+                .padding(.bottom, 4)
+            }
+            ForEach(Array(items.enumerated()), id: \.offset) { index, item in
+                if item.kind == .section {
+                    Text(item.text)
+                        .font(.title3).bold()
+                        .padding(.top, index == 0 ? 0 : 12)
+                } else {
+                    Button { toggle(item) } label: {
+                        HStack(alignment: .firstTextBaseline, spacing: 8) {
+                            Image(systemName: item.done ? "checkmark.square.fill" : "square")
+                                .foregroundStyle(item.done ? Color.accentColor : .secondary)
+                            Text(item.text)
+                                .strikethrough(item.done, color: .secondary)
+                                .foregroundStyle(item.done ? .secondary : .primary)
+                        }
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+        }
+        .onAppear(perform: reload)
+    }
+
+    private func reload() {
+        guard let data = FileManager.default.contents(atPath: tasksPath) else {
+            items = []
+            return
+        }
+        items = parseTasks(String(decoding: data, as: UTF8.self))
+    }
+
+    private func toggle(_ item: TaskItem) {
+        do {
+            items = try toggleTaskByText(tasksPath, item.text)
+            errorText = nil
+        } catch {
+            errorText = "Couldn't write tasks.md: \(error.localizedDescription)"
         }
     }
 }

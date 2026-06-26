@@ -31,6 +31,24 @@ public func findCursorByText(_ items: [TaskItem], _ text: String) -> Int {
     return first == -1 ? 0 : first
 }
 
+/// toggleTaskByText re-reads and re-parses the file, finds the first task whose
+/// text matches, and toggles it on disk — never trusting a stale line index, so
+/// an external edit between render and toggle can't flip the wrong line. Returns
+/// the updated items (unchanged if no task matches). This is what a live-
+/// reloading GUI should call.
+@discardableResult
+public func toggleTaskByText(_ path: String, _ text: String,
+                             fs: FileSystem = OSFileSystem()) throws -> [TaskItem] {
+    let data = try fs.readFile(path)
+    var items = parseTasks(String(decoding: data, as: UTF8.self))
+    let idx = findCursorByText(items, text)
+    guard idx < items.count, items[idx].kind == .task, items[idx].text == text else {
+        return items
+    }
+    try toggleTask(path, &items, idx, fs: fs)
+    return items
+}
+
 /// toggleTask flips items[idx] in memory (inout) and on disk. The write path
 /// splits on raw "\n" WITHOUT stripping "\r", so CRLF files keep CRLF endings —
 /// the asymmetry with splitLines is deliberate. It re-reads the file first so a

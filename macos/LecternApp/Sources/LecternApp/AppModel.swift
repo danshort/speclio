@@ -270,6 +270,34 @@ final class AppModel: ObservableObject {
         worktrees.first { $0.path == path }
     }
 
+    // The on-disk file (or directory) backing the current selection, for
+    // reveal-in-Finder / open-in-editor.
+    func currentFilePath() -> String? {
+        func join(_ parts: String...) -> String {
+            parts.dropFirst().reduce(parts.first ?? "") { ($0 as NSString).appendingPathComponent($1) }
+        }
+        switch selection {
+        case .artifact(let ref):
+            guard let c = change(named: ref.changeName) else { return nil }
+            switch ref.kind {
+            case .proposal: return join(c.path, "proposal.md")
+            case .design: return join(c.path, "design.md")
+            case .tasks: return join(c.path, "tasks.md")
+            case .specFile(let name): return join(c.path, "specs", name, "spec.md")
+            }
+        case .projectSpec(let name):
+            guard let root = rootPath else { return nil }
+            return join(root, "openspec", "specs", name, "spec.md")
+        case .config:
+            guard let root = rootPath else { return nil }
+            return join(root, "openspec", "config.yaml")
+        case .worktree(let path):
+            return path
+        case .none:
+            return nil
+        }
+    }
+
     func artifact(for ref: ArtifactRef, in change: Change) -> Artifact {
         switch ref.kind {
         case .proposal: return change.proposal
