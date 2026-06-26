@@ -48,7 +48,7 @@
 ## 6. Packaging, signing, distribution (Phase 6)
 
 - [x] 6.1 **Ad-hoc** code-sign (`codesign --sign -`, required for Apple Silicon to run); produce a `.dmg`/zip. Developer-ID signing **deferred** (no Apple Developer account yet — see 3.1/distribution decision)
-- [ ] 6.2 **Gated on account approval:** Developer-ID sign + notarize + staple in a **decoupled** macOS job (cannot fail the existing goreleaser/CLI release). Machinery is ready (SIGN_IDENTITY-aware script); flip tracked in a sub-issue
+- _6.2 Developer-ID notarize + staple — **descoped to #67** (gated on Apple Developer account approval; machinery is SIGN_IDENTITY-ready)._
 - [x] 6.3 Publish a Homebrew **cask** alongside the CLI formula; document the first-launch Gatekeeper step (right-click → Open, or `--no-quarantine`) since the build is unnotarized
 - [x] 6.4 **Update mechanism — DECIDED: `brew upgrade` only** (no Sparkle now; nothing foreclosed — App Store updates later if that path is taken)
 - [x] 6.5 Accessibility pass (VoiceOver, keyboard nav, Dynamic Type, contrast); update `README.md` with screenshots
@@ -58,4 +58,4 @@
 - [x] 7.1 Both golden lanes green in CI (Go + Swift, non-path-filtered) on every PR
 - [x] 7.2 Manual QA matrix (browse, render, validation banner, requirement focus, toggle LF/CRLF/external, worktrees, missing-git, unreadable-artifact) — tracked in #71 (user sign-off)
 - [x] 7.3 Confirm the TUI is unchanged (no diffs under `internal/ui`, `cmd/`, `internal/openspec` logic — only added tests/tags)
-- [ ] 7.4 Verify a notarized build installs cleanly past Gatekeeper on a clean machine — gated on account approval, tracked in #67
+- _7.4 Verify a notarized build installs cleanly past Gatekeeper on a clean machine — **descoped to #67**._
