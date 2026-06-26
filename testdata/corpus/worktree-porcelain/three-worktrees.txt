@@ -1,0 +1,15 @@
+worktree /home/user/project
+HEAD 1111111111111111111111111111111111111111
+branch refs/heads/main
+
+worktree /home/user/project-feature
+HEAD 2222222222222222222222222222222222222222
+branch refs/heads/feature/x
+
+worktree /home/user/project-detached
+HEAD 3333333333333333333333333333333333333333
+detached
+
+worktree /home/user/project-bare
+bare
+

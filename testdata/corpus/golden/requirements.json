@@ -1,0 +1,5 @@
+{
+  "Login": "### Requirement: Login\nUsers SHALL log in.\n\n#### Scenario: Valid credentials\n- **WHEN** correct credentials are supplied\n- **THEN** the user is authenticated\n",
+  "Logout": "### Requirement: Logout\nUsers SHALL log out.\n\n#### Scenario: Active session\n- **WHEN** a logged-in user logs out\n- **THEN** the session ends\n",
+  "Missing": ""
+}

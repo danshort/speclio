@@ -1,11 +1,11 @@
 ## 1. Shared fixture corpus + Go golden tests (Phase 1 — stands alone)
 
-- [ ] 1.1 Create `testdata/corpus/` fixtures: `basic-project` (≥3 changes with mixed/equal `Created`, ≥3 spec dirs — exercises sort stability and unsorted `loadSpecs` order), `crlf-tasks` + `lf-tasks` (both with trailing newlines), `unreadable-artifact`, `malformed-archive-name` (`2026-13-99`, `2026-02-29`, `2024-02-29` for calendar validity), `malformed-meta` (bad `.openspec.yaml` → empty `Created`), `config-variants` (absent `rules`, `rules: {}`, multiline context), `delta-specs` (missing proposal, `HasPrefix` headers, empty-named requirement), `worktree-porcelain/*.txt` (captured porcelain text)
-- [ ] 1.2 Write the **serialization contract** doc (no `omitempty`; absent → `null`; empty slice → `[]`; empty map → `{}`; sorted keys; snake_case) and add JSON struct tags to the Go domain types accordingly
-- [ ] 1.3 `internal/openspec/golden_test.go`: golden tests for **every entry point** — `Project` (`*.json`), `ParseTasks` (`tasks.json`, incl. `LineNum`), `ExtractRequirement` (`requirements.json`), `parseWorktreeList` (`worktrees.json`), `ConfigToMarkdown` (`config.md`), validation (`validation.json`); `-update` flag to regenerate
-- [ ] 1.4 Byte-exact toggle write goldens for **both** LF and CRLF fixtures (`*.after-toggle.tasks.md`)
-- [ ] 1.5 Normalize the unreadable-artifact golden (presence + read-error flag + prefix-only content) so it is language-stable
-- [ ] 1.6 Generate goldens, confirm `go test ./internal/openspec/...` passes; keep existing `t.TempDir()` tests; wire into CI
+- [x] 1.1 Create `testdata/corpus/` fixtures: `basic-project` (≥3 changes with mixed/equal `Created`, ≥3 spec dirs — exercises sort stability and unsorted `loadSpecs` order), `crlf-tasks` + `lf-tasks` (both with trailing newlines), `unreadable-artifact`, `malformed-archive-name` (`2026-13-99`, `2026-02-29`, `2024-02-29` for calendar validity), `malformed-meta` (bad `.openspec.yaml` → empty `Created`), `config-variants` (absent `rules`, `rules: {}`, multiline context), `delta-specs` (missing proposal, `HasPrefix` headers, empty-named requirement), `worktree-porcelain/*.txt` (captured porcelain text)
+- [x] 1.2 Write the **serialization contract** doc (no `omitempty`; absent → `null`; empty slice → `[]`; empty map → `{}`; sorted keys; snake_case) and add JSON struct tags to the Go domain types accordingly
+- [x] 1.3 `internal/openspec/golden_test.go`: golden tests for **every entry point** — `Project` (`*.json`), `ParseTasks` (`tasks.json`, incl. `LineNum`), `ExtractRequirement` (`requirements.json`), `parseWorktreeList` (`worktrees.json`), `ConfigToMarkdown` (`config.md`), validation (`validation.json`); `-update` flag to regenerate
+- [x] 1.4 Byte-exact toggle write goldens for **both** LF and CRLF fixtures (`*.after-toggle.tasks.md`)
+- [x] 1.5 Normalize the unreadable-artifact golden (presence + read-error flag + prefix-only content) so it is language-stable
+- [x] 1.6 Generate goldens, confirm `go test ./internal/openspec/...` passes; keep existing `t.TempDir()` tests; wire into CI
 
 ## 2. OpenSpecKit — Swift domain port (Phase 2)
 

@@ -1,0 +1,32 @@
+{
+  "changes": [
+    {
+      "created": "2026-05-01",
+      "design": {
+        "content": "# readable design\n",
+        "present": true,
+        "read_error": false
+      },
+      "display_date": "",
+      "name": "has-unreadable",
+      "path": "openspec/changes/has-unreadable",
+      "proposal": {
+        "content": "⚠ couldn't read openspec/changes/has-unreadable/proposal.md",
+        "present": true,
+        "read_error": true
+      },
+      "spec_files": [],
+      "specs": {
+        "content": "",
+        "present": false,
+        "read_error": false
+      },
+      "tasks": {
+        "content": "",
+        "present": false,
+        "read_error": false
+      }
+    }
+  ],
+  "name": "unreadable-artifact"
+}

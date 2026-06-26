@@ -40,45 +40,51 @@ const (
 	unreadablePrefix = "⚠ couldn't read "
 )
 
+// JSON tags on the domain types document the cross-language serialization
+// contract shared with the Swift port (snake_case field names). The error
+// fields are tagged `json:"-"`: a Go error has no byte-stable, cross-language
+// representation, so the golden harness records read failures as a derived
+// boolean plus normalized placeholder content instead. See
+// testdata/corpus/README.md for the full contract.
 type Artifact struct {
-	Content string
-	Present bool
+	Content string `json:"content"`
+	Present bool   `json:"present"`
 	// ReadErr is set when the file exists but could not be read (a non-not-found
 	// error). The artifact is still Present, with placeholder Content; callers
 	// surface it (a ⚠ marker, the placeholder on open) instead of treating it as
 	// absent or as a validation failure.
-	ReadErr error
+	ReadErr error `json:"-"`
 }
 
 type NamedSpec struct {
-	Name    string
-	Content string
-	ReadErr error
+	Name    string `json:"name"`
+	Content string `json:"content"`
+	ReadErr error  `json:"-"`
 }
 
 type Change struct {
-	Name        string
-	Path        string
-	Created     string
-	DisplayDate string
-	Proposal    Artifact
-	Design      Artifact
-	Tasks       Artifact
-	Specs       Artifact
-	SpecFiles   []NamedSpec
+	Name        string      `json:"name"`
+	Path        string      `json:"path"`
+	Created     string      `json:"created"`
+	DisplayDate string      `json:"display_date"`
+	Proposal    Artifact    `json:"proposal"`
+	Design      Artifact    `json:"design"`
+	Tasks       Artifact    `json:"tasks"`
+	Specs       Artifact    `json:"specs"`
+	SpecFiles   []NamedSpec `json:"spec_files"`
 }
 
 type Project struct {
-	Name    string
-	Changes []Change
+	Name    string   `json:"name"`
+	Changes []Change `json:"changes"`
 }
 
 type ProjectSpec struct {
-	Name             string
-	RequirementCount int
-	RequirementNames []string
-	Content          string
-	ReadErr          error
+	Name             string   `json:"name"`
+	RequirementCount int      `json:"requirement_count"`
+	RequirementNames []string `json:"requirement_names"`
+	Content          string   `json:"content"`
+	ReadErr          error    `json:"-"`
 }
 
 type openspecMeta struct {
@@ -87,8 +93,8 @@ type openspecMeta struct {
 }
 
 type ProjectConfig struct {
-	Context string
-	Rules   map[string][]string
+	Context string              `json:"context"`
+	Rules   map[string][]string `json:"rules"`
 }
 
 type projectConfigYAML struct {

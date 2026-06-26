@@ -1,0 +1,9 @@
+context: |
+  Line one.
+  Line two.
+rules:
+  proposal:
+    - Always include a Non-goals section
+    - Keep it concise
+  tasks:
+    - Small steps

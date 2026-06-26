@@ -1,0 +1,110 @@
+[
+  {
+    "created": "",
+    "design": {
+      "content": "",
+      "present": false,
+      "read_error": false
+    },
+    "display_date": "",
+    "name": "plain-name",
+    "path": "openspec/changes/archive/plain-name",
+    "proposal": {
+      "content": "# plain-name\n",
+      "present": true,
+      "read_error": false
+    },
+    "spec_files": [],
+    "specs": {
+      "content": "",
+      "present": false,
+      "read_error": false
+    },
+    "tasks": {
+      "content": "",
+      "present": false,
+      "read_error": false
+    }
+  },
+  {
+    "created": "",
+    "design": {
+      "content": "",
+      "present": false,
+      "read_error": false
+    },
+    "display_date": "",
+    "name": "2026-13-99-foo",
+    "path": "openspec/changes/archive/2026-13-99-foo",
+    "proposal": {
+      "content": "# 2026-13-99-foo\n",
+      "present": true,
+      "read_error": false
+    },
+    "spec_files": [],
+    "specs": {
+      "content": "",
+      "present": false,
+      "read_error": false
+    },
+    "tasks": {
+      "content": "",
+      "present": false,
+      "read_error": false
+    }
+  },
+  {
+    "created": "",
+    "design": {
+      "content": "",
+      "present": false,
+      "read_error": false
+    },
+    "display_date": "",
+    "name": "2026-02-29-bar",
+    "path": "openspec/changes/archive/2026-02-29-bar",
+    "proposal": {
+      "content": "# 2026-02-29-bar\n",
+      "present": true,
+      "read_error": false
+    },
+    "spec_files": [],
+    "specs": {
+      "content": "",
+      "present": false,
+      "read_error": false
+    },
+    "tasks": {
+      "content": "",
+      "present": false,
+      "read_error": false
+    }
+  },
+  {
+    "created": "",
+    "design": {
+      "content": "",
+      "present": false,
+      "read_error": false
+    },
+    "display_date": "2024-02-29",
+    "name": "baz",
+    "path": "openspec/changes/archive/2024-02-29-baz",
+    "proposal": {
+      "content": "# 2024-02-29-baz\n",
+      "present": true,
+      "read_error": false
+    },
+    "spec_files": [],
+    "specs": {
+      "content": "",
+      "present": false,
+      "read_error": false
+    },
+    "tasks": {
+      "content": "",
+      "present": false,
+      "read_error": false
+    }
+  }
+]

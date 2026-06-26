@@ -12,11 +12,26 @@ const (
 	KindTask
 )
 
+// String / MarshalJSON give ItemKind a stable, human-readable, cross-language
+// serialization ("section"/"task") for the golden harness, instead of the raw
+// iota int. No production code marshals TaskItem today; this only affects the
+// shared golden contract (see testdata/corpus/README.md).
+func (k ItemKind) String() string {
+	if k == KindTask {
+		return "task"
+	}
+	return "section"
+}
+
+func (k ItemKind) MarshalJSON() ([]byte, error) {
+	return []byte(`"` + k.String() + `"`), nil
+}
+
 type TaskItem struct {
-	Kind    ItemKind
-	Text    string
-	Done    bool
-	LineNum int
+	Kind    ItemKind `json:"kind"`
+	Text    string   `json:"text"`
+	Done    bool     `json:"done"`
+	LineNum int      `json:"line_num"`
 }
 
 var (

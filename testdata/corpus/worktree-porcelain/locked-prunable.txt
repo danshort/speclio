@@ -1,0 +1,14 @@
+worktree /home/user/main
+HEAD 4444444444444444444444444444444444444444
+branch refs/heads/main
+
+worktree /home/user/wt-locked
+HEAD 5555555555555555555555555555555555555555
+branch refs/heads/locked-branch
+locked
+
+worktree /home/user/wt-prunable
+HEAD 6666666666666666666666666666666666666666
+branch refs/heads/gone
+prunable
+

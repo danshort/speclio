@@ -1,0 +1,42 @@
+[
+  {
+    "bare": false,
+    "branch": "main",
+    "detached": false,
+    "head": "1111111111111111111111111111111111111111",
+    "is_current": false,
+    "locked": false,
+    "path": "/home/user/project",
+    "prunable": false
+  },
+  {
+    "bare": false,
+    "branch": "feature/x",
+    "detached": false,
+    "head": "2222222222222222222222222222222222222222",
+    "is_current": false,
+    "locked": false,
+    "path": "/home/user/project-feature",
+    "prunable": false
+  },
+  {
+    "bare": false,
+    "branch": "",
+    "detached": true,
+    "head": "3333333333333333333333333333333333333333",
+    "is_current": false,
+    "locked": false,
+    "path": "/home/user/project-detached",
+    "prunable": false
+  },
+  {
+    "bare": true,
+    "branch": "",
+    "detached": false,
+    "head": "",
+    "is_current": false,
+    "locked": false,
+    "path": "/home/user/project-bare",
+    "prunable": false
+  }
+]

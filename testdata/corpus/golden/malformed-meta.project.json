@@ -1,0 +1,32 @@
+{
+  "changes": [
+    {
+      "created": "",
+      "design": {
+        "content": "",
+        "present": false,
+        "read_error": false
+      },
+      "display_date": "",
+      "name": "broken",
+      "path": "openspec/changes/broken",
+      "proposal": {
+        "content": "# broken\n",
+        "present": true,
+        "read_error": false
+      },
+      "spec_files": [],
+      "specs": {
+        "content": "",
+        "present": false,
+        "read_error": false
+      },
+      "tasks": {
+        "content": "",
+        "present": false,
+        "read_error": false
+      }
+    }
+  ],
+  "name": "malformed-meta"
+}

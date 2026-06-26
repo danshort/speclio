@@ -1,0 +1,22 @@
+{
+  "absent-rules": {
+    "context": "Just a context, no rules.",
+    "rules": null
+  },
+  "empty-rules": {
+    "context": "Has empty rules.",
+    "rules": {}
+  },
+  "multiline": {
+    "context": "Line one.\nLine two.",
+    "rules": {
+      "proposal": [
+        "Always include a Non-goals section",
+        "Keep it concise"
+      ],
+      "tasks": [
+        "Small steps"
+      ]
+    }
+  }
+}

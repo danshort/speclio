@@ -1,0 +1,14 @@
+{
+  "change/needs-work": [
+    "missing proposal.md",
+    "delta spec \"feature\": requirement \"Changed thing\" in MODIFIED section has no scenario"
+  ],
+  "spec/missing-sections": [
+    "missing \"## Purpose\" section",
+    "missing \"## Requirements\" section"
+  ],
+  "spec/req-without-scenario": [
+    "requirement \"Lonely\" has no \"#### Scenario:\""
+  ],
+  "spec/valid-spec": []
+}

@@ -11,14 +11,14 @@ import (
 // Worktree describes a single git worktree as reported by
 // `git worktree list --porcelain`.
 type Worktree struct {
-	Path      string
-	Branch    string // short branch name (refs/heads/ stripped); empty when detached or bare
-	Head      string // full HEAD SHA
-	IsCurrent bool   // the worktree lectern is running in
-	Detached  bool
-	Bare      bool
-	Locked    bool
-	Prunable  bool
+	Path      string `json:"path"`
+	Branch    string `json:"branch"` // short branch name (refs/heads/ stripped); empty when detached or bare
+	Head      string `json:"head"`   // full HEAD SHA
+	IsCurrent bool   `json:"is_current"`
+	Detached  bool   `json:"detached"`
+	Bare      bool   `json:"bare"`
+	Locked    bool   `json:"locked"`
+	Prunable  bool   `json:"prunable"`
 }
 
 // ListWorktrees enumerates the git worktrees sharing root's repository by

@@ -1,0 +1,32 @@
+[
+  {
+    "bare": false,
+    "branch": "main",
+    "detached": false,
+    "head": "4444444444444444444444444444444444444444",
+    "is_current": false,
+    "locked": false,
+    "path": "/home/user/main",
+    "prunable": false
+  },
+  {
+    "bare": false,
+    "branch": "locked-branch",
+    "detached": false,
+    "head": "5555555555555555555555555555555555555555",
+    "is_current": false,
+    "locked": true,
+    "path": "/home/user/wt-locked",
+    "prunable": false
+  },
+  {
+    "bare": false,
+    "branch": "gone",
+    "detached": false,
+    "head": "6666666666666666666666666666666666666666",
+    "is_current": false,
+    "locked": false,
+    "path": "/home/user/wt-prunable",
+    "prunable": true
+  }
+]
