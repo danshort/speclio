@@ -16,18 +16,18 @@
 - [ ] 2.5 Port the loader using `components(separatedBy: "\n")` (Go `strings.Split` trailing/empty semantics); `loadFrom`, `loadFromPath` (grandparent `Project.Name`), archive listing (calendar-valid date gate), `loadSpecs` (separator, absent-on-empty), the two different spec-loading error semantics
 - [ ] 2.6 Port tasks: `parseTasks`; **separate** CRLF-safe `toggleTask` write path; `toggleTask` mutates the task list in place (`inout`) and re-reads before writing
 - [ ] 2.7 Port validation (incl. `proposal.Present`, `HasPrefix` headers vs anchored `deltaHeaderRe`, empty-named-requirement skip) and `extractRequirement`
-- [ ] 2.8 Port worktree porcelain parser + `normalizePath` as EvalSymlinks-then-lexical-Clean-fallback (not `resolvingSymlinksInPath`); parser separated from `Process` invocation
+- [ ] 2.8 Port worktree porcelain parser + `normalizePath` as EvalSymlinks-then-lexical-Clean-fallback (not `resolvingSymlinksInPath`); define a `GitService` protocol (per 3.1) with the porcelain **parser separated from** the `Process` invocation, so the sandbox flip later swaps only the invocation
 - [ ] 2.9 `OpenSpecKitTests`: run every entry point against the shared `testdata/corpus/`, assert byte-equality vs the same goldens; unit-assert ToggleTask's in-memory mutation (no golden)
 - [ ] 2.10 Add a **required, non-path-filtered** macOS CI lane (`swift test`); both Go and Swift golden lanes green on every PR
 
-## 3. Architecture decisions (gate Phases 3–5 — resolve before SwiftUI)
+## 3. Architecture decisions (gate Phases 4–6 — resolve before SwiftUI)
 
-- [ ] 3.1 Decide **App Sandbox posture**: Developer-ID non-sandboxed (worktrees + git work; no App Store) vs sandboxed (App Store-eligible; worktree feature needs a helper or is dropped). Document entitlements and the file-access model (security-scoped bookmarks)
+- [x] 3.1 **App Sandbox posture — DECIDED: Option C.** Ship Developer-ID **non-sandboxed** now (full features), architected for a later sandbox/App-Store flip: route all FS access through `FileSystem` and all git through a new `GitService` protocol (2.3/2.8), use security-scoped-bookmark access patterns from day one (4.1), and defer the git + sibling-worktree sandbox problem (scope-to-repo-root vs drop vs XPC helper) to the App Store decision (~1 yr out). Don't hard-wire Sparkle as the only updater (App Store bans it) — see 6.4.
 - [ ] 3.2 Decide the **markdown renderer** (swift-markdown + custom SwiftUI views) and its dependency/licensing implications
 
 ## 4. SwiftUI reader shell (Phase 4 — read-only)
 
-- [ ] 4.1 App target `macos/LecternApp/` depending on `OpenSpecKit`; project picker with a security-scoped bookmark per the 3.1 decision
+- [ ] 4.1 App target `macos/LecternApp/` depending on `OpenSpecKit`; project picker that persists a **security-scoped bookmark from day one** (per 3.1) and accesses all files through it, so the model is unchanged if the app is sandboxed later
 - [ ] 4.2 `NavigationSplitView`: sidebar of changes → artifacts; detail pane
 - [ ] 4.3 Markdown rendering (tables, code fences, nested lists), the `⚠ couldn't read` placeholder, and the inline validation banner (omitted for unreadable artifacts)
 - [ ] 4.4 Requirement focus/extract + jump-to navigation; specs section + project config view
@@ -35,7 +35,7 @@
 ## 5. Interaction + OS integration (Phase 5)
 
 - [ ] 5.1 Task checkbox toggle through the CRLF-safe `toggleTask` with a re-read before write; integration test on LF and CRLF fixtures and on an externally-modified file
-- [ ] 5.2 Worktrees view via `Process` git with a 5 s watchdog, within the 3.1 file-access model; graceful "unavailable" when git is absent
+- [ ] 5.2 Worktrees view via the `GitService` (`Process` git, 5 s watchdog) within the 3.1 file-access model; graceful "unavailable" when git is absent
 - [ ] 5.3 FSEvents live reload of `openspec/` (debounced); integration test that an external edit refreshes the view
 - [ ] 5.4 Open-in-editor / reveal-in-Finder (subject to the sandbox decision)
 
@@ -44,7 +44,7 @@
 - [ ] 6.1 Code-sign with Developer ID (hardened runtime, entitlements); produce a `.dmg`
 - [ ] 6.2 Notarize + staple in a **decoupled** macOS job that cannot fail the existing goreleaser/CLI release; signing secrets via repo secrets
 - [ ] 6.3 Publish a Homebrew **cask** alongside the CLI formula; document install for both
-- [ ] 6.4 Decide and implement the update mechanism (Sparkle vs `brew upgrade`)
+- [ ] 6.4 Decide and implement the update mechanism (Sparkle vs `brew upgrade`) — per 3.1, do not make Sparkle the *only* path, since a later App Store build bans it and uses App Store updates
 - [ ] 6.5 Accessibility pass (VoiceOver, keyboard nav, Dynamic Type, contrast); update `README.md` with screenshots
 
 ## 7. Verification
