@@ -15,6 +15,15 @@ struct ContentView: View {
             ToolbarItem(placement: .navigation) {
                 Button { model.openPanel() } label: { Label("Open", systemImage: "folder") }
             }
+            ToolbarItem(placement: .principal) {
+                Picker("Mode", selection: $model.mode) {
+                    ForEach(Mode.allCases) { Text($0.rawValue).tag($0) }
+                }
+                .pickerStyle(.segmented)
+                .labelsHidden()
+                .fixedSize()
+                .disabled(model.project == nil)
+            }
             ToolbarItem {
                 Button { model.reload() } label: { Label("Reload", systemImage: "arrow.clockwise") }
                     .disabled(model.project == nil)
@@ -23,48 +32,118 @@ struct ContentView: View {
     }
 }
 
+// MARK: - Sidebar
+
 struct Sidebar: View {
     @EnvironmentObject var model: AppModel
 
     var body: some View {
         Group {
-            if let project = model.project {
+            if model.project == nil {
+                EmptyProjectState()
+            } else {
                 List(selection: $model.selection) {
-                    ForEach(project.changes, id: \.name) { change in
-                        Section(change.name) {
-                            artifactRows(change)
-                        }
+                    switch model.mode {
+                    case .activeChanges, .archivedChanges:
+                        changeList(model.changes(for: model.mode))
+                    case .specs:
+                        specList
+                    case .worktrees:
+                        worktreeList
                     }
                 }
-            } else {
-                emptyState
             }
         }
         .frame(minWidth: 220)
     }
 
     @ViewBuilder
-    private func artifactRows(_ change: Change) -> some View {
+    private func changeList(_ changes: [Change]) -> some View {
+        if changes.isEmpty {
+            Text("Nothing here").foregroundStyle(.secondary)
+        } else {
+            ForEach(changes, id: \.name) { change in
+                Section(change.name) { ArtifactRows(change: change) }
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var specList: some View {
+        if model.projectSpecs.isEmpty {
+            Text("No project specs").foregroundStyle(.secondary)
+        } else {
+            ForEach(model.projectSpecs, id: \.name) { spec in
+                Label(spec.name, systemImage: "doc.plaintext")
+                    .badge(spec.requirementCount)
+                    .tag(Selection.projectSpec(spec.name))
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var worktreeList: some View {
+        if model.worktrees.isEmpty {
+            Text(model.worktreesError ?? "No worktrees").foregroundStyle(.secondary)
+        } else {
+            ForEach(model.worktrees, id: \.path) { wt in
+                Label(worktreeTitle(wt), systemImage: wt.isCurrent ? "checkmark.circle.fill" : "point.3.connected.trianglepath.dotted")
+                    .tag(Selection.worktree(wt.path))
+            }
+        }
+    }
+
+    private func worktreeTitle(_ wt: Worktree) -> String {
+        if wt.bare { return "(bare)" }
+        if wt.detached { return "(detached)" }
+        return wt.branch.isEmpty ? (wt.path as NSString).lastPathComponent : wt.branch
+    }
+}
+
+struct ArtifactRows: View {
+    let change: Change
+
+    var body: some View {
         if change.proposal.present {
-            row(change, .proposal, "Proposal", "doc.text")
+            row(.proposal, "Proposal", "doc.text")
         }
         if change.design.present {
-            row(change, .design, "Design", "pencil.and.outline")
+            row(.design, "Design", "pencil.and.outline")
         }
         if !change.specFiles.isEmpty {
             SpecsGroup(change: change)
         }
         if change.tasks.present {
-            row(change, .tasks, "Tasks", "checklist")
+            row(.tasks, "Tasks", "checklist")
         }
     }
 
-    private func row(_ change: Change, _ kind: ArtifactKind, _ title: String, _ icon: String) -> some View {
+    private func row(_ kind: ArtifactKind, _ title: String, _ icon: String) -> some View {
         Label(title, systemImage: icon)
-            .tag(ArtifactRef(changeName: change.name, kind: kind))
+            .tag(Selection.artifact(ArtifactRef(changeName: change.name, kind: kind)))
     }
+}
 
-    private var emptyState: some View {
+struct SpecsGroup: View {
+    let change: Change
+    @State private var expanded = true
+
+    var body: some View {
+        DisclosureGroup(isExpanded: $expanded) {
+            ForEach(change.specFiles, id: \.name) { sf in
+                Label(sf.name, systemImage: "doc.plaintext")
+                    .tag(Selection.artifact(ArtifactRef(changeName: change.name, kind: .specFile(sf.name))))
+            }
+        } label: {
+            Label("Specs", systemImage: "folder")
+        }
+    }
+}
+
+struct EmptyProjectState: View {
+    @EnvironmentObject var model: AppModel
+
+    var body: some View {
         VStack(spacing: 12) {
             Image(systemName: "books.vertical")
                 .font(.system(size: 40))
@@ -84,46 +163,76 @@ struct Sidebar: View {
     }
 }
 
-struct SpecsGroup: View {
-    let change: Change
-    @State private var expanded = true
-
-    var body: some View {
-        DisclosureGroup(isExpanded: $expanded) {
-            ForEach(change.specFiles, id: \.name) { sf in
-                Label(sf.name, systemImage: "doc.plaintext")
-                    .tag(ArtifactRef(changeName: change.name, kind: .specFile(sf.name)))
-            }
-        } label: {
-            Label("Specs", systemImage: "folder")
-        }
-    }
-}
+// MARK: - Detail
 
 struct DetailView: View {
     @EnvironmentObject var model: AppModel
 
     var body: some View {
-        if let ref = model.selection, let change = model.currentChange() {
-            let artifact = model.artifact(for: ref, in: change)
-            ScrollView {
-                VStack(alignment: .leading, spacing: 14) {
-                    if isSpec(ref.kind), !artifact.readError {
-                        ValidationBanner(change: change)
-                    }
-                    content(artifact)
-                }
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(24)
+        switch model.selection {
+        case .artifact(let ref):
+            if let change = model.change(named: ref.changeName) {
+                ArtifactDetail(change: change, ref: ref)
+                    .navigationTitle(change.name)
+            } else {
+                Placeholder()
             }
-            .navigationTitle(change.name)
-        } else {
-            ContentUnavailableLikeView()
+        case .projectSpec(let name):
+            if let spec = model.projectSpec(named: name) {
+                ProjectSpecDetail(spec: spec).navigationTitle(name)
+            } else {
+                Placeholder()
+            }
+        case .worktree(let path):
+            if let wt = model.worktree(path: path) {
+                WorktreeDetail(worktree: wt).navigationTitle("Worktrees")
+            } else {
+                Placeholder()
+            }
+        case .none:
+            Placeholder()
+        }
+    }
+}
+
+struct ArtifactDetail: View {
+    @EnvironmentObject var model: AppModel
+    let change: Change
+    let ref: ArtifactRef
+
+    var body: some View {
+        let artifact = model.artifact(for: ref, in: change)
+        ScrollableContent {
+            if isSpec(ref.kind), !artifact.readError {
+                ValidationBanner(issues: validateChange(change))
+            }
+            ArtifactBody(artifact: artifact)
         }
     }
 
-    @ViewBuilder
-    private func content(_ artifact: Artifact) -> some View {
+    private func isSpec(_ kind: ArtifactKind) -> Bool {
+        if case .specFile = kind { return true }
+        return false
+    }
+}
+
+struct ProjectSpecDetail: View {
+    let spec: ProjectSpec
+
+    var body: some View {
+        ScrollableContent {
+            if !spec.readError {
+                ValidationBanner(issues: validateSpec(spec.content))
+            }
+            ArtifactBody(artifact: Artifact(content: spec.content, present: true, readError: spec.readError))
+        }
+    }
+}
+
+struct ArtifactBody: View {
+    let artifact: Artifact
+
+    var body: some View {
         if artifact.readError {
             Label(artifact.content, systemImage: "exclamationmark.triangle.fill")
                 .foregroundStyle(.orange)
@@ -134,18 +243,41 @@ struct DetailView: View {
             MarkdownView(artifact.content)
         }
     }
+}
 
-    private func isSpec(_ kind: ArtifactKind) -> Bool {
-        if case .specFile = kind { return true }
-        return false
+struct WorktreeDetail: View {
+    let worktree: Worktree
+
+    var body: some View {
+        ScrollableContent {
+            VStack(alignment: .leading, spacing: 10) {
+                field("Path", worktree.path)
+                field("Branch", worktree.branch.isEmpty ? "—" : worktree.branch)
+                field("HEAD", worktree.head.isEmpty ? "—" : worktree.head)
+                let flags = [
+                    worktree.isCurrent ? "current" : nil,
+                    worktree.detached ? "detached" : nil,
+                    worktree.bare ? "bare" : nil,
+                    worktree.locked ? "locked" : nil,
+                    worktree.prunable ? "prunable" : nil,
+                ].compactMap { $0 }
+                field("Flags", flags.isEmpty ? "—" : flags.joined(separator: ", "))
+            }
+        }
+    }
+
+    private func field(_ label: String, _ value: String) -> some View {
+        VStack(alignment: .leading, spacing: 2) {
+            Text(label).font(.caption).foregroundStyle(.secondary)
+            Text(value).font(.system(.body, design: .monospaced)).textSelection(.enabled)
+        }
     }
 }
 
 struct ValidationBanner: View {
-    let change: Change
+    let issues: [String]
 
     var body: some View {
-        let issues = validateChange(change)
         if !issues.isEmpty {
             VStack(alignment: .leading, spacing: 4) {
                 Label("Validation issues", systemImage: "exclamationmark.triangle.fill")
@@ -163,14 +295,28 @@ struct ValidationBanner: View {
     }
 }
 
-// Minimal stand-in (ContentUnavailableView is macOS 14+; keep deployment at 13).
-struct ContentUnavailableLikeView: View {
+// Shared scroll container for detail content.
+struct ScrollableContent<Content: View>: View {
+    @ViewBuilder var content: Content
+
+    var body: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 14) {
+                content
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(24)
+        }
+    }
+}
+
+struct Placeholder: View {
     var body: some View {
         VStack(spacing: 8) {
             Image(systemName: "doc.text.magnifyingglass")
                 .font(.system(size: 36))
                 .foregroundStyle(.secondary)
-            Text("Select an artifact").foregroundStyle(.secondary)
+            Text("Select an item").foregroundStyle(.secondary)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }

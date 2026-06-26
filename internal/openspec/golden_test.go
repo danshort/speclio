@@ -183,6 +183,32 @@ func normProject(p *Project, root string) gProject {
 	return gProject{Name: p.Name, Changes: normChanges(p.Changes, root)}
 }
 
+type gProjectSpec struct {
+	Name             string   `json:"name"`
+	RequirementCount int      `json:"requirement_count"`
+	RequirementNames []string `json:"requirement_names"`
+	Content          string   `json:"content"`
+	ReadError        bool     `json:"read_error"`
+}
+
+func normProjectSpecs(specs []ProjectSpec, root string) []gProjectSpec {
+	out := []gProjectSpec{}
+	for _, ps := range specs {
+		names := ps.RequirementNames
+		if names == nil {
+			names = []string{}
+		}
+		out = append(out, gProjectSpec{
+			Name:             ps.Name,
+			RequirementCount: ps.RequirementCount,
+			RequirementNames: names,
+			Content:          normContent(ps.Content, ps.ReadErr, root),
+			ReadError:        ps.ReadErr != nil,
+		})
+	}
+	return out
+}
+
 // faultFS injects a synthetic (non-not-found) read error for a single path, so
 // the present-but-unreadable branch is exercised deterministically — a real
 // unreadable file cannot survive a git checkout.
@@ -250,6 +276,15 @@ func TestGolden(t *testing.T) {
 		if !bytes.Equal(canonicalJSON(t, lfItems), canonicalJSON(t, crlfItems)) {
 			t.Errorf("CRLF and LF tasks parsed differently")
 		}
+	})
+
+	t.Run("project-specs/basic-project", func(t *testing.T) {
+		root := filepath.Join(corpus, "basic-project")
+		specs, err := NewLoader(OSFS{}).LoadProjectSpecsFrom(root)
+		if err != nil {
+			t.Fatal(err)
+		}
+		checkGoldenJSON(t, "basic-project.project-specs.json", normProjectSpecs(specs, root))
 	})
 
 	t.Run("requirements/extract", func(t *testing.T) {

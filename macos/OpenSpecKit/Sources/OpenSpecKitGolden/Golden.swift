@@ -212,6 +212,29 @@ func normProject(_ p: Project, _ root: String) -> GProject {
     GProject(name: p.name, changes: p.changes.map { normChange($0, root) })
 }
 
+struct GProjectSpec: Encodable {
+    let name: String
+    let requirementCount: Int
+    let requirementNames: [String]
+    let content: String
+    let readError: Bool
+    enum CodingKeys: String, CodingKey {
+        case name, content
+        case requirementCount = "requirement_count"
+        case requirementNames = "requirement_names"
+        case readError = "read_error"
+    }
+}
+
+func normProjectSpecs(_ specs: [ProjectSpec], _ root: String) -> [GProjectSpec] {
+    specs.map {
+        GProjectSpec(name: $0.name, requirementCount: $0.requirementCount,
+                     requirementNames: $0.requirementNames,
+                     content: normContent($0.content, readError: $0.readError, root: root),
+                     readError: $0.readError)
+    }
+}
+
 // ── fault injection (deterministic present-but-unreadable) ────────────────────
 
 struct FaultFS: FileSystem {
@@ -281,6 +304,13 @@ public func runAllGoldenChecks(corpus: String? = nil) -> [GoldenFailure] {
     compareJSON("tasks.json", lfItems)
     if (try? canonicalJSON(lfItems)) != (try? canonicalJSON(crlfItems)) {
         failures.append(GoldenFailure(name: "tasks.json", detail: "CRLF and LF parsed differently"))
+    }
+
+    // project-specs/basic-project
+    if let specs = try? Loader().loadProjectSpecsFrom(fixture("basic-project")) {
+        compareJSON("basic-project.project-specs.json", normProjectSpecs(specs, fixture("basic-project")))
+    } else {
+        failures.append(GoldenFailure(name: "basic-project.project-specs.json", detail: "loadProjectSpecsFrom threw"))
     }
 
     // requirements/extract

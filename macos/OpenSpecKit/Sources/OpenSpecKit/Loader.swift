@@ -49,6 +49,32 @@ public struct Loader {
         return ProjectConfig(context: trimSpace(raw.context ?? ""), rules: raw.rules)
     }
 
+    public func loadProjectSpecsFrom(_ root: String) throws -> [ProjectSpec] {
+        let specsDir = joinPath(root, Layout.dirOpenspec, Layout.dirSpecs)
+        let names = try listDirs(specsDir, excludeArchive: false) // propagates errors (unlike loadSpecs)
+        var specs: [ProjectSpec] = []
+        for name in names {
+            var ps = ProjectSpec(name: name)
+            let specPath = joinPath(specsDir, name, Layout.fileSpec)
+            do {
+                let content = String(decoding: try fs.readFile(specPath), as: UTF8.self)
+                ps.content = content
+                for line in splitLines(content) where line.hasPrefix(Layout.reqPrefix) {
+                    ps.requirementCount += 1
+                    ps.requirementNames.append(trimSpace(String(line.dropFirst(Layout.reqPrefix.count))))
+                }
+            } catch FSError.notFound {
+                // spec dir without a spec.md — leave empty (unchanged behavior).
+            } catch {
+                ps.readError = true
+                ps.content = Layout.unreadablePrefix + specPath + ": " + error.localizedDescription
+            }
+            specs.append(ps)
+        }
+        specs.sort { $0.name < $1.name }
+        return specs
+    }
+
     public func listArchiveChangesFrom(_ root: String) throws -> [Change] {
         let archiveDir = joinPath(root, Layout.dirOpenspec, Layout.dirChanges, Layout.dirArchive)
         var dirs = try listDirs(archiveDir, excludeArchive: false)

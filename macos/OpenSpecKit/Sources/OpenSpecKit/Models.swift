@@ -85,6 +85,30 @@ public struct Project: Codable, Equatable {
     }
 }
 
+public struct ProjectSpec: Codable, Equatable {
+    public var name: String
+    public var requirementCount: Int
+    public var requirementNames: [String]
+    public var content: String
+    public var readError: Bool
+
+    public init(name: String, requirementCount: Int = 0, requirementNames: [String] = [],
+                content: String = "", readError: Bool = false) {
+        self.name = name
+        self.requirementCount = requirementCount
+        self.requirementNames = requirementNames
+        self.content = content
+        self.readError = readError
+    }
+
+    enum CodingKeys: String, CodingKey {
+        case name, content
+        case requirementCount = "requirement_count"
+        case requirementNames = "requirement_names"
+        case readError = "read_error"
+    }
+}
+
 public struct ProjectConfig: Encodable, Equatable {
     public var context: String
     public var rules: [String: [String]]?

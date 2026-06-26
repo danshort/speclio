@@ -2,7 +2,17 @@ import SwiftUI
 import AppKit
 import OpenSpecKit
 
-// Identifies a single artifact within a change, used as the sidebar selection.
+// Top-level navigation modes, shown in the toolbar segmented switcher.
+enum Mode: String, CaseIterable, Identifiable {
+    case activeChanges = "Active"
+    case archivedChanges = "Archived"
+    case specs = "Specs"
+    case worktrees = "Worktrees"
+
+    var id: String { rawValue }
+}
+
+// Identifies a single artifact within a change (active or archived).
 enum ArtifactKind: Hashable {
     case proposal
     case design
@@ -15,12 +25,28 @@ struct ArtifactRef: Hashable {
     let kind: ArtifactKind
 }
 
+// A unified sidebar selection across the heterogeneous modes.
+enum Selection: Hashable {
+    case artifact(ArtifactRef)
+    case projectSpec(String)
+    case worktree(String)
+}
+
 @MainActor
 final class AppModel: ObservableObject {
+    @Published var mode: Mode = .activeChanges {
+        didSet { if mode != oldValue { selection = defaultSelection(for: mode) } }
+    }
+    @Published var selection: Selection?
+
     @Published var project: Project?
+    @Published var archivedChanges: [Change] = []
+    @Published var projectSpecs: [ProjectSpec] = []
+    @Published var worktrees: [Worktree] = []
+    @Published var worktreesError: String?
+
     @Published var rootPath: String?
     @Published var loadError: String?
-    @Published var selection: ArtifactRef?
 
     private let bookmarkKey = "projectBookmark"
     private var accessedURL: URL?
@@ -44,9 +70,7 @@ final class AppModel: ObservableObject {
     }
 
     func reload() {
-        if let path = rootPath {
-            load(URL(fileURLWithPath: path))
-        }
+        if let path = rootPath { load(URL(fileURLWithPath: path)) }
     }
 
     private func persistBookmark(for url: URL) {
@@ -70,38 +94,82 @@ final class AppModel: ObservableObject {
         _ = url.startAccessingSecurityScopedResource()
         accessedURL = url
         rootPath = url.path
+
+        let loader = Loader()
         do {
-            let loaded = try Loader().loadFrom(url.path)
-            project = loaded
+            project = try loader.loadFrom(url.path)
             loadError = nil
-            selection = defaultSelection(for: loaded)
         } catch {
             project = nil
-            selection = nil
             loadError = describe(error)
         }
+        archivedChanges = (try? loader.listArchiveChangesFrom(url.path)) ?? []
+        projectSpecs = (try? loader.loadProjectSpecsFrom(url.path)) ?? []
+        loadWorktrees(url.path)
+
+        selection = defaultSelection(for: mode)
     }
 
-    private func defaultSelection(for project: Project) -> ArtifactRef? {
-        guard let first = project.changes.first else { return nil }
-        if first.proposal.present { return ArtifactRef(changeName: first.name, kind: .proposal) }
-        return ArtifactRef(changeName: first.name, kind: .design)
+    private func loadWorktrees(_ path: String) {
+        do {
+            worktrees = try ProcessGitService().listWorktrees(root: path)
+            worktreesError = nil
+        } catch {
+            worktrees = []
+            worktreesError = "Worktrees unavailable (git not found or not a working tree)."
+        }
     }
 
     private func describe(_ error: Error) -> String {
         switch error {
-        case LoaderError.noOpenspecDir(let root):
-            return "No openspec/ directory found in \(root)"
-        default:
-            return "\(error)"
+        case LoaderError.noOpenspecDir(let root): return "No openspec/ directory found in \(root)"
+        default: return "\(error)"
         }
     }
 
-    // MARK: - Resolving the current selection
+    // MARK: - Per-mode data + default selection
 
-    func currentChange() -> Change? {
-        guard let ref = selection else { return nil }
-        return project?.changes.first { $0.name == ref.changeName }
+    func changes(for mode: Mode) -> [Change] {
+        switch mode {
+        case .activeChanges: return project?.changes ?? []
+        case .archivedChanges: return archivedChanges
+        default: return []
+        }
+    }
+
+    private func defaultSelection(for mode: Mode) -> Selection? {
+        switch mode {
+        case .activeChanges, .archivedChanges:
+            guard let first = changes(for: mode).first else { return nil }
+            return .artifact(ArtifactRef(changeName: first.name, kind: firstArtifactKind(first)))
+        case .specs:
+            guard let first = projectSpecs.first else { return nil }
+            return .projectSpec(first.name)
+        case .worktrees:
+            guard let first = worktrees.first else { return nil }
+            return .worktree(first.path)
+        }
+    }
+
+    private func firstArtifactKind(_ change: Change) -> ArtifactKind {
+        if change.proposal.present { return .proposal }
+        if change.design.present { return .design }
+        if let sf = change.specFiles.first { return .specFile(sf.name) }
+        return .tasks
+    }
+
+    // MARK: - Resolving selections
+
+    func change(named name: String) -> Change? {
+        changes(for: mode).first { $0.name == name }
+    }
+
+    func projectSpec(named name: String) -> ProjectSpec? {
+        projectSpecs.first { $0.name == name }
+    }
+
+    func worktree(path: String) -> Worktree? {
+        worktrees.first { $0.path == path }
     }
 
     func artifact(for ref: ArtifactRef, in change: Change) -> Artifact {

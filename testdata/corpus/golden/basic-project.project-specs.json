@@ -1,0 +1,28 @@
+[
+  {
+    "content": "## Purpose\n\nAuthentication capability.\n\n## Requirements\n\n### Requirement: Login\nUsers SHALL log in.\n\n#### Scenario: Valid credentials\n- **WHEN** correct credentials are supplied\n- **THEN** the user is authenticated\n\n### Requirement: Logout\nUsers SHALL log out.\n\n#### Scenario: Active session\n- **WHEN** a logged-in user logs out\n- **THEN** the session ends\n",
+    "name": "auth-capability",
+    "read_error": false,
+    "requirement_count": 2,
+    "requirement_names": [
+      "Login",
+      "Logout"
+    ]
+  },
+  {
+    "content": "## Purpose\n\nBilling capability.\n\n## Requirements\n\n### Requirement: Invoice\nThe system SHALL issue invoices.\n\n#### Scenario: Order placed\n- **WHEN** an order is placed\n- **THEN** an invoice is generated\n",
+    "name": "billing-capability",
+    "read_error": false,
+    "requirement_count": 1,
+    "requirement_names": [
+      "Invoice"
+    ]
+  },
+  {
+    "content": "",
+    "name": "empty-capability",
+    "read_error": false,
+    "requirement_count": 0,
+    "requirement_names": []
+  }
+]
