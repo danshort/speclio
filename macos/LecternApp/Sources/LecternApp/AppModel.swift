@@ -30,6 +30,11 @@ enum Selection: Hashable {
     case artifact(ArtifactRef)
     case projectSpec(String)
     case worktree(String)
+    case config
+}
+
+extension ProjectConfig {
+    var hasContent: Bool { !context.isEmpty || (rules?.isEmpty == false) }
 }
 
 // A node in the sidebar tree. Rendered by an OutlineGroup, which manages
@@ -67,6 +72,7 @@ final class AppModel: ObservableObject {
     @Published var project: Project?
     @Published var archivedChanges: [Change] = []
     @Published var projectSpecs: [ProjectSpec] = []
+    @Published var projectConfig: ProjectConfig?
     @Published var worktrees: [Worktree] = []
     @Published var worktreesError: String?
 
@@ -130,6 +136,7 @@ final class AppModel: ObservableObject {
         }
         archivedChanges = (try? loader.listArchiveChangesFrom(url.path)) ?? []
         projectSpecs = (try? loader.loadProjectSpecsFrom(url.path)) ?? []
+        projectConfig = try? loader.loadConfigFrom(url.path)
         loadWorktrees(url.path)
 
         rebuildSidebar()
@@ -165,19 +172,25 @@ final class AppModel: ObservableObject {
 
     private func rebuildSidebar() {
         var map: [String: Selection] = [:]
-        let nodes: [SidebarNode]
+        var nodes: [SidebarNode]
         switch mode {
         case .activeChanges, .archivedChanges:
             nodes = changes(for: mode).map { changeNode($0, into: &map) }
         case .specs:
-            nodes = projectSpecs.map { spec in
+            nodes = []
+            if let cfg = projectConfig, cfg.hasContent {
+                map["config"] = .config
+                nodes.append(SidebarNode(id: "config", title: "Project Config", subtitle: nil,
+                                         icon: "gearshape", prominent: false, children: nil))
+            }
+            nodes.append(contentsOf: projectSpecs.map { spec in
                 let id = "spec:\(spec.name)"
                 map[id] = .projectSpec(spec.name)
                 let count = spec.requirementCount
                 return SidebarNode(id: id, title: spec.name,
                                    subtitle: count > 0 ? "\(count) requirement\(count == 1 ? "" : "s")" : nil,
                                    icon: "doc.plaintext", prominent: false, children: nil)
-            }
+            })
         case .worktrees:
             nodes = worktrees.map { wt in
                 let id = "wt:\(wt.path)"

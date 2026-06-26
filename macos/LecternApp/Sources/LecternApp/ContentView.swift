@@ -124,13 +124,25 @@ struct DetailView: View {
             }
         case .projectSpec(let name):
             if let spec = model.projectSpec(named: name) {
-                ProjectSpecDetail(spec: spec).navigationTitle(name)
+                SpecContentView(
+                    artifact: Artifact(content: spec.content, present: true, readError: spec.readError),
+                    issues: spec.readError ? [] : validateSpec(spec.content)
+                )
+                .id("spec:\(name)")
+                .navigationTitle(name)
             } else {
                 Placeholder()
             }
         case .worktree(let path):
             if let wt = model.worktree(path: path) {
                 WorktreeDetail(worktree: wt).navigationTitle("Worktrees")
+            } else {
+                Placeholder()
+            }
+        case .config:
+            if let cfg = model.projectConfig {
+                ScrollableContent { MarkdownView(configToMarkdown(cfg)) }
+                    .navigationTitle("Project Config")
             } else {
                 Placeholder()
             }
@@ -147,30 +159,67 @@ struct ArtifactDetail: View {
 
     var body: some View {
         let artifact = model.artifact(for: ref, in: change)
-        ScrollableContent {
-            if isSpec(ref.kind), !artifact.readError {
-                ValidationBanner(issues: validateChange(change))
-            }
-            ArtifactBody(artifact: artifact)
+        if case .specFile(let name) = ref.kind {
+            SpecContentView(artifact: artifact, issues: artifact.readError ? [] : validateChange(change))
+                .id("\(change.name)/spec/\(name)")
+        } else {
+            ScrollableContent { ArtifactBody(artifact: artifact) }
         }
-    }
-
-    private func isSpec(_ kind: ArtifactKind) -> Bool {
-        if case .specFile = kind { return true }
-        return false
     }
 }
 
-struct ProjectSpecDetail: View {
-    let spec: ProjectSpec
+// Renders a spec with a requirement-focus picker: "All requirements" shows the
+// full spec (with its validation banner); picking one shows just that
+// requirement's extracted block (task 4.9, via OpenSpecKit.extractRequirement).
+struct SpecContentView: View {
+    let artifact: Artifact
+    let issues: [String]
+    @State private var focused: String?
 
     var body: some View {
         ScrollableContent {
-            if !spec.readError {
-                ValidationBanner(issues: validateSpec(spec.content))
+            if artifact.readError {
+                Label(artifact.content, systemImage: "exclamationmark.triangle.fill")
+                    .foregroundStyle(.orange)
+                    .font(.callout)
+            } else if !artifact.present {
+                Text("This artifact is not present.").foregroundStyle(.secondary)
+            } else {
+                let names = requirementNames(in: artifact.content)
+                if !names.isEmpty {
+                    focusPicker(names)
+                }
+                if focused == nil {
+                    ValidationBanner(issues: issues)
+                }
+                MarkdownView(focused.map { extractRequirement(artifact.content, $0) } ?? artifact.content)
             }
-            ArtifactBody(artifact: Artifact(content: spec.content, present: true, readError: spec.readError))
         }
+    }
+
+    private func focusPicker(_ names: [String]) -> some View {
+        HStack(spacing: 6) {
+            Image(systemName: "scope").foregroundStyle(.secondary)
+            Picker("Focus requirement", selection: $focused) {
+                Text("All requirements").tag(String?.none)
+                ForEach(names, id: \.self) { name in
+                    Text(name).tag(String?.some(name))
+                }
+            }
+            .labelsHidden()
+            .fixedSize()
+        }
+    }
+}
+
+// Requirement names for the focus picker — presentation helper mirroring
+// extractRequirement's matching (`### Requirement:` prefix, trimmed, non-empty).
+func requirementNames(in content: String) -> [String] {
+    content.components(separatedBy: "\n").compactMap { raw in
+        let line = raw.hasSuffix("\r") ? String(raw.dropLast()) : raw
+        guard line.hasPrefix("### Requirement:") else { return nil }
+        let name = line.dropFirst("### Requirement:".count).trimmingCharacters(in: .whitespaces)
+        return name.isEmpty ? nil : name
     }
 }
 

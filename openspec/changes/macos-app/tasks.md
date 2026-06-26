@@ -35,8 +35,8 @@
 - [x] 4.6 **Specs mode**: list `openspec/specs/` capability specs; render the selected `spec.md` with markdown + the validation banner
 - [x] 4.7 **Archived Changes mode**: list `openspec/changes/archive/` (newest first) via `listArchiveChangesFrom`, reusing change rendering (rich archive-specific display deferred)
 - [x] 4.8 **Worktrees mode**: list git worktrees via `GitService`/`ProcessGitService`; graceful "unavailable" when git is absent
-- [ ] 4.9 Requirement focus/extract + jump-to navigation (via `extractRequirement`) within a rendered spec
-- [ ] 4.10 Project config view (`openspec/config.yaml` → `configToMarkdown`)
+- [x] 4.9 Requirement focus/extract + jump-to navigation (via `extractRequirement`) within a rendered spec
+- [x] 4.10 Project config view (`openspec/config.yaml` → `configToMarkdown`)
 
 ## 5. Interaction + OS integration (Phase 5)
 
