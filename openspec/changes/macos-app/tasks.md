@@ -9,16 +9,16 @@
 
 ## 2. OpenSpecKit — Swift domain port (Phase 2)
 
-- [ ] 2.1 Scaffold `macos/OpenSpecKit/` SwiftPM package (library + test target), no app dependency; pin Swift toolchain
-- [ ] 2.2 Port models as `Codable` structs with `CodingKeys` matching the Go JSON tags; honor the serialization contract (nil/empty/`[]`/`{}`)
-- [ ] 2.3 `protocol FileSystem` + `OSFileSystem`; `readDir` **sorts by name** (Swift `FileManager` is unsorted); not-found vs other-error distinction
-- [ ] 2.4 Parse YAML with **Yams** (not `Codable`); field-tolerant `.openspec.yaml` (swallow errors → empty `Created`) vs error-propagating `config.yaml`; preserve nil-vs-empty `rules`
-- [ ] 2.5 Port the loader using `components(separatedBy: "\n")` (Go `strings.Split` trailing/empty semantics); `loadFrom`, `loadFromPath` (grandparent `Project.Name`), archive listing (calendar-valid date gate), `loadSpecs` (separator, absent-on-empty), the two different spec-loading error semantics
-- [ ] 2.6 Port tasks: `parseTasks`; **separate** CRLF-safe `toggleTask` write path; `toggleTask` mutates the task list in place (`inout`) and re-reads before writing
-- [ ] 2.7 Port validation (incl. `proposal.Present`, `HasPrefix` headers vs anchored `deltaHeaderRe`, empty-named-requirement skip) and `extractRequirement`
-- [ ] 2.8 Port worktree porcelain parser + `normalizePath` as EvalSymlinks-then-lexical-Clean-fallback (not `resolvingSymlinksInPath`); define a `GitService` protocol (per 3.1) with the porcelain **parser separated from** the `Process` invocation, so the sandbox flip later swaps only the invocation
-- [ ] 2.9 `OpenSpecKitTests`: run every entry point against the shared `testdata/corpus/`, assert byte-equality vs the same goldens; unit-assert ToggleTask's in-memory mutation (no golden)
-- [ ] 2.10 Add a **required, non-path-filtered** macOS CI lane (`swift test`); both Go and Swift golden lanes green on every PR
+- [x] 2.1 Scaffold `macos/OpenSpecKit/` SwiftPM package (library + test target), no app dependency; pin Swift toolchain
+- [x] 2.2 Port models as `Codable` structs with `CodingKeys` matching the Go JSON tags; honor the serialization contract (nil/empty/`[]`/`{}`)
+- [x] 2.3 `protocol FileSystem` + `OSFileSystem`; `readDir` **sorts by name** (Swift `FileManager` is unsorted); not-found vs other-error distinction
+- [x] 2.4 Parse YAML with **Yams** (not `Codable`); field-tolerant `.openspec.yaml` (swallow errors → empty `Created`) vs error-propagating `config.yaml`; preserve nil-vs-empty `rules`
+- [x] 2.5 Port the loader using `components(separatedBy: "\n")` (Go `strings.Split` trailing/empty semantics); `loadFrom`, `loadFromPath` (grandparent `Project.Name`), archive listing (calendar-valid date gate), `loadSpecs` (separator, absent-on-empty), the two different spec-loading error semantics
+- [x] 2.6 Port tasks: `parseTasks`; **separate** CRLF-safe `toggleTask` write path; `toggleTask` mutates the task list in place (`inout`) and re-reads before writing
+- [x] 2.7 Port validation (incl. `proposal.Present`, `HasPrefix` headers vs anchored `deltaHeaderRe`, empty-named-requirement skip) and `extractRequirement`
+- [x] 2.8 Port worktree porcelain parser + `normalizePath` as EvalSymlinks-then-lexical-Clean-fallback (not `resolvingSymlinksInPath`); define a `GitService` protocol (per 3.1) with the porcelain **parser separated from** the `Process` invocation, so the sandbox flip later swaps only the invocation
+- [x] 2.9 `OpenSpecKitTests`: run every entry point against the shared `testdata/corpus/`, assert byte-equality vs the same goldens; unit-assert ToggleTask's in-memory mutation (no golden)
+- [x] 2.10 Add a **required, non-path-filtered** macOS CI lane (`swift test`); both Go and Swift golden lanes green on every PR
 
 ## 3. Architecture decisions (gate Phases 4–6 — resolve before SwiftUI)
 
