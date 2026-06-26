@@ -11,6 +11,31 @@ The project SHALL provide a native macOS application that reads an OpenSpec proj
 - **WHEN** the macOS app is built and run
 - **THEN** the Go TUI's behavior and code are unchanged
 
+### Requirement: Top-level navigation modes
+The app SHALL present a top-level mode switcher (a segmented control in the window toolbar) that switches between dedicated views for **Active Changes**, **Archived Changes**, **Specs**, and **Worktrees**. The selected mode determines the contents of both the sidebar list and the detail pane.
+
+#### Scenario: Switching modes
+- **WHEN** the user selects a mode in the switcher
+- **THEN** the sidebar and detail update to that mode's content (active changes, archived changes, project specs, or worktrees)
+
+#### Scenario: Active Changes is the default
+- **WHEN** a project is opened
+- **THEN** the app starts in the Active Changes mode
+
+### Requirement: Project specs index
+In the Specs mode, the app SHALL list the project's long-lived specs from `openspec/specs/` and render a selected spec with the same markdown and validation behavior as change artifacts.
+
+#### Scenario: Browse project specs
+- **WHEN** the user selects the Specs mode
+- **THEN** the app lists the capability specs under `openspec/specs/` and renders the selected spec's `spec.md`
+
+### Requirement: Archived changes browsing
+In the Archived Changes mode, the app SHALL list the project's archived changes from `openspec/changes/archive/`, separate from active changes, and let the user open their artifacts.
+
+#### Scenario: Browse archived changes
+- **WHEN** the user selects the Archived Changes mode
+- **THEN** the app lists the archived changes (newest first) and lets the user open each one's artifacts
+
 ### Requirement: Faithful domain behavior via a shared contract
 The app SHALL obtain changes, tasks, validation results, and worktree data through a domain layer whose behavior matches the Go implementation as enforced by the shared fixture corpus.
 

@@ -30,12 +30,18 @@
 - [x] 4.1 App target `macos/LecternApp/` depending on `OpenSpecKit`; project picker that persists a **security-scoped bookmark from day one** (per 3.1) and accesses all files through it, so the model is unchanged if the app is sandboxed later
 - [x] 4.2 `NavigationSplitView`: sidebar of changes → artifacts; detail pane
 - [x] 4.3 Markdown rendering (tables, code fences, nested lists), the `⚠ couldn't read` placeholder, and the inline validation banner (omitted for unreadable artifacts)
-- [ ] 4.4 Requirement focus/extract + jump-to navigation; specs section + project config view
+- [ ] 4.4 **Top-level mode switcher** (toolbar segmented control): Active Changes, Archived Changes, Specs, Worktrees — the selected mode drives the sidebar list and detail pane (default: Active Changes)
+- [ ] 4.5 Port `loadProjectSpecsFrom` into `OpenSpecKit` (deferred in Phase 2) **+ a corpus fixture with `openspec/specs/` and a Go + Swift golden**, so the Specs mode stays in the cross-language contract
+- [ ] 4.6 **Specs mode**: list `openspec/specs/` capability specs; render the selected `spec.md` with markdown + the validation banner
+- [ ] 4.7 **Archived Changes mode**: list `openspec/changes/archive/` (newest first) via `listArchiveChangesFrom`, reusing change rendering (rich archive-specific display deferred)
+- [ ] 4.8 **Worktrees mode**: list git worktrees via `GitService`/`ProcessGitService`; graceful "unavailable" when git is absent
+- [ ] 4.9 Requirement focus/extract + jump-to navigation (via `extractRequirement`) within a rendered spec
+- [ ] 4.10 Project config view (`openspec/config.yaml` → `configToMarkdown`)
 
 ## 5. Interaction + OS integration (Phase 5)
 
 - [ ] 5.1 Task checkbox toggle through the CRLF-safe `toggleTask` with a re-read before write; integration test on LF and CRLF fixtures and on an externally-modified file
-- [ ] 5.2 Worktrees view via the `GitService` (`Process` git, 5 s watchdog) within the 3.1 file-access model; graceful "unavailable" when git is absent
+- [ ] 5.2 Harden the worktrees `Process` invocation (5 s watchdog, error states) behind `GitService` — the Worktrees *view* itself lands in Phase 4 (4.8)
 - [ ] 5.3 FSEvents live reload of `openspec/` (debounced); integration test that an external edit refreshes the view
 - [ ] 5.4 Open-in-editor / reveal-in-Finder (subject to the sandbox decision)
 
