@@ -117,8 +117,19 @@ The app SHALL present the git worktrees of the project's repository, and SHALL d
 - **THEN** the app shows an unavailable state instead of failing
 
 ### Requirement: Live reload on disk changes
-The app SHALL reflect on-disk changes to the open project's `openspec/` tree without requiring a manual refresh.
+The app SHALL reflect on-disk changes to the open project's `openspec/` tree without requiring a manual refresh, and a reload SHALL preserve the current selection when it still exists.
 
 #### Scenario: External edit refreshes the view
 - **WHEN** a file under the open project's `openspec/` directory is modified by another process
-- **THEN** the app updates its view to reflect the change
+- **THEN** the app updates its view to reflect the change, keeping the current selection
+
+### Requirement: Reveal and open the selected file
+The app SHALL let the user reveal the currently selected item (artifact, project spec, config, or worktree) in Finder and open it in the system default application.
+
+#### Scenario: Reveal in Finder
+- **WHEN** the user chooses "Reveal in Finder" for a selection backed by a file or directory
+- **THEN** Finder opens with that item selected
+
+#### Scenario: Open in default app
+- **WHEN** the user chooses "Open in Default App" for a file-backed selection
+- **THEN** the file opens in its default application
