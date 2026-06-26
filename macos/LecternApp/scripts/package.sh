@@ -1,9 +1,14 @@
 #!/usr/bin/env bash
-# Packages LecternApp as a .app bundle, ad-hoc code-signs it (required for Apple
-# Silicon to run an unsigned binary), and zips it for the Homebrew cask.
-# Developer-ID signing + notarization are deferred (no Apple Developer account).
+# Packages LecternApp as a .app bundle, code-signs it, and zips it for the
+# Homebrew cask.
 #
-# Usage: scripts/package.sh [version]   (default version: 0.0.0-dev)
+# Signing is Developer-ID-ready: by default it ad-hoc signs (required for Apple
+# Silicon to run; fine for local dev). Set SIGN_IDENTITY to a "Developer ID
+# Application: ..." identity for a distributable, notarizable build. Notarization
+# is a separate gated step in the release workflow (needs network + credentials).
+#
+# Usage:   scripts/package.sh [version]            (default version: 0.0.0-dev)
+# Signed:  SIGN_IDENTITY="Developer ID Application: …" scripts/package.sh 1.2.3
 set -euo pipefail
 
 VERSION="${1:-0.0.0-dev}"
@@ -23,8 +28,14 @@ mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Resources"
 cp "$BIN" "$APP/Contents/MacOS/$EXEC_NAME"
 sed "s/__VERSION__/$VERSION/g" "$PKG_DIR/Resources/Info.plist" > "$APP/Contents/Info.plist"
 
-echo "==> ad-hoc code-signing"
-codesign --force --deep --options runtime --sign - "$APP"
+SIGN_IDENTITY="${SIGN_IDENTITY:--}"
+if [ "$SIGN_IDENTITY" = "-" ]; then
+    echo "==> ad-hoc code-signing (set SIGN_IDENTITY=<Developer ID> for distribution)"
+    codesign --force --deep --options runtime --sign - "$APP"
+else
+    echo "==> code-signing with: $SIGN_IDENTITY (hardened runtime, timestamped)"
+    codesign --force --deep --options runtime --timestamp --sign "$SIGN_IDENTITY" "$APP"
+fi
 codesign --verify --strict --verbose=2 "$APP"
 
 echo "==> zipping for cask"

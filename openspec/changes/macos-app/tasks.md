@@ -48,7 +48,7 @@
 ## 6. Packaging, signing, distribution (Phase 6)
 
 - [x] 6.1 **Ad-hoc** code-sign (`codesign --sign -`, required for Apple Silicon to run); produce a `.dmg`/zip. Developer-ID signing **deferred** (no Apple Developer account yet — see 3.1/distribution decision)
-- [ ] 6.2 **Deferred:** notarize + staple (requires the Apple Developer account). When added, run it in a **decoupled** macOS job that cannot fail the existing goreleaser/CLI release
+- [ ] 6.2 **Gated on account approval:** Developer-ID sign + notarize + staple in a **decoupled** macOS job (cannot fail the existing goreleaser/CLI release). Machinery is ready (SIGN_IDENTITY-aware script); flip tracked in a sub-issue
 - [ ] 6.3 Publish a Homebrew **cask** alongside the CLI formula; document the first-launch Gatekeeper step (right-click → Open, or `--no-quarantine`) since the build is unnotarized
 - [x] 6.4 **Update mechanism — DECIDED: `brew upgrade` only** (no Sparkle now; nothing foreclosed — App Store updates later if that path is taken)
 - [ ] 6.5 Accessibility pass (VoiceOver, keyboard nav, Dynamic Type, contrast); update `README.md` with screenshots
