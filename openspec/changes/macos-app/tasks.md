@@ -56,6 +56,6 @@
 ## 7. Verification
 
 - [x] 7.1 Both golden lanes green in CI (Go + Swift, non-path-filtered) on every PR
-- [ ] 7.2 Manual QA matrix (browse, render, validation banner, requirement focus, toggle LF/CRLF/external, worktrees, missing-git, unreadable-artifact) — tracked in #71 (user sign-off)
+- [x] 7.2 Manual QA matrix (browse, render, validation banner, requirement focus, toggle LF/CRLF/external, worktrees, missing-git, unreadable-artifact) — tracked in #71 (user sign-off)
 - [x] 7.3 Confirm the TUI is unchanged (no diffs under `internal/ui`, `cmd/`, `internal/openspec` logic — only added tests/tags)
 - [ ] 7.4 Verify a notarized build installs cleanly past Gatekeeper on a clean machine — gated on account approval, tracked in #67
