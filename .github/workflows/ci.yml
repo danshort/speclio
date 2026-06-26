@@ -31,3 +31,28 @@ jobs:
       run: |
         go install golang.org/x/vuln/cmd/govulncheck@latest
         govulncheck ./...
+
+  # macOS Swift lane: OpenSpecKit must reproduce the shared golden corpus
+  # byte-for-byte, the same fixtures the Go lane checks. Runs unconditionally
+  # (no path filter) so a one-sided change to internal/openspec or the corpus
+  # is caught here too — the anti-drift guarantee.
+  swift:
+    runs-on: macos-15
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v5
+
+    - name: Select Xcode
+      run: sudo xcode-select -s /Applications/Xcode_16.4.app
+
+    - name: Swift build
+      run: swift build
+      working-directory: macos/OpenSpecKit
+
+    - name: Golden byte-check (executable)
+      run: swift run oskgolden
+      working-directory: macos/OpenSpecKit
+
+    - name: Swift test (XCTest)
+      run: swift test
+      working-directory: macos/OpenSpecKit
