@@ -9,8 +9,13 @@ import Markdown
 struct MarkdownView: View {
     private let document: Document
     // Larger-than-default base that still scales with the system text size
-    // (Dynamic Type), instead of a fixed point size.
+    // (Dynamic Type).
     @ScaledMetric(relativeTo: .body) private var bodySize: CGFloat = 15
+    // User content font-size preference (#63), a multiplier on top of Dynamic
+    // Type. Content-only — the sidebar/chrome are unaffected.
+    @AppStorage(ContentFont.storageKey) private var contentFontScale = ContentFont.defaultScale
+
+    private var base: CGFloat { bodySize * CGFloat(ContentFont.clamp(contentFontScale)) }
 
     init(_ text: String) {
         self.document = Document(parsing: text)
@@ -19,10 +24,10 @@ struct MarkdownView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
             ForEach(Array(document.children.enumerated()), id: \.offset) { _, child in
-                BlockView(markup: child)
+                BlockView(markup: child, base: base)
             }
         }
-        .font(.system(size: bodySize))
+        .font(.system(size: base))
         .lineSpacing(6)
         .textSelection(.enabled)
     }
@@ -31,12 +36,13 @@ struct MarkdownView: View {
 /// Renders a single block-level Markup node (and recurses for containers).
 struct BlockView: View {
     let markup: Markup
+    var base: CGFloat = 15
 
     var body: some View {
         switch markup {
         case let heading as Heading:
             Text(InlineText.attributed(heading))
-                .font(headingFont(heading.level))
+                .font(.system(size: headingSize(heading.level)))
                 .bold()
                 .padding(.top, heading.level <= 2 ? 12 : 6)
                 .padding(.bottom, 2)
@@ -46,16 +52,16 @@ struct BlockView: View {
                 .fixedSize(horizontal: false, vertical: true)
 
         case let code as CodeBlock:
-            CodeBlockView(code: code.code)
+            CodeBlockView(code: code.code, base: base)
 
         case let list as UnorderedList:
-            ListView(items: Array(list.listItems), ordered: false)
+            ListView(items: Array(list.listItems), ordered: false, base: base)
 
         case let list as OrderedList:
-            ListView(items: Array(list.listItems), ordered: true)
+            ListView(items: Array(list.listItems), ordered: true, base: base)
 
         case let quote as BlockQuote:
-            BlockQuoteView(quote: quote)
+            BlockQuoteView(quote: quote, base: base)
 
         case is ThematicBreak:
             Divider().padding(.vertical, 4)
@@ -67,28 +73,31 @@ struct BlockView: View {
             // Unknown container: render its block children.
             VStack(alignment: .leading, spacing: 8) {
                 ForEach(Array(markup.children.enumerated()), id: \.offset) { _, child in
-                    BlockView(markup: child)
+                    BlockView(markup: child, base: base)
                 }
             }
         }
     }
 
-    private func headingFont(_ level: Int) -> Font {
+    // Heading sizes derive from the (Dynamic-Type × user-scale) base so the
+    // whole rendered document scales uniformly with the font preference.
+    private func headingSize(_ level: Int) -> CGFloat {
         switch level {
-        case 1: return .title
-        case 2: return .title2
-        case 3: return .title3
-        default: return .headline
+        case 1: return base * 1.7
+        case 2: return base * 1.4
+        case 3: return base * 1.2
+        default: return base * 1.05
         }
     }
 }
 
 struct CodeBlockView: View {
     let code: String
+    var base: CGFloat = 15
 
     var body: some View {
         Text(code.hasSuffix("\n") ? String(code.dropLast()) : code)
-            .font(.system(.callout, design: .monospaced))
+            .font(.system(size: base, design: .monospaced))
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(10)
             .background(Color.secondary.opacity(0.12))
@@ -100,6 +109,7 @@ struct CodeBlockView: View {
 struct ListView: View {
     let items: [ListItem]
     let ordered: Bool
+    var base: CGFloat = 15
 
     var body: some View {
         VStack(alignment: .leading, spacing: 7) {
@@ -110,7 +120,7 @@ struct ListView: View {
                         .foregroundStyle(.secondary)
                     VStack(alignment: .leading, spacing: 4) {
                         ForEach(Array(item.children.enumerated()), id: \.offset) { _, child in
-                            BlockView(markup: child)
+                            BlockView(markup: child, base: base)
                         }
                     }
                 }
@@ -122,6 +132,7 @@ struct ListView: View {
 
 struct BlockQuoteView: View {
     let quote: BlockQuote
+    var base: CGFloat = 15
 
     var body: some View {
         HStack(alignment: .top, spacing: 8) {
@@ -130,7 +141,7 @@ struct BlockQuoteView: View {
                 .frame(width: 3)
             VStack(alignment: .leading, spacing: 8) {
                 ForEach(Array(quote.children.enumerated()), id: \.offset) { _, child in
-                    BlockView(markup: child)
+                    BlockView(markup: child, base: base)
                 }
             }
         }
