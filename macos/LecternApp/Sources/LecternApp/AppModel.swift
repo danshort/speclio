@@ -102,55 +102,65 @@ final class AppModel: ObservableObject {
     @Published var rootPath: String?
     @Published var loadError: String?
 
-    private let bookmarkKey = "projectBookmark"
     private var accessedURL: URL?
     private var watcher: DirectoryWatcher?
 
-    init() {
-        restoreBookmark()
-    }
-
-    // MARK: - Opening / restoring the project (security-scoped bookmark)
-
-    func openPanel() {
-        let panel = NSOpenPanel()
-        panel.canChooseDirectories = true
-        panel.canChooseFiles = false
-        panel.allowsMultipleSelection = false
-        panel.message = "Choose a project folder containing an openspec/ directory"
-        panel.prompt = "Open"
-        guard panel.runModal() == .OK, let url = panel.url else { return }
-        persistBookmark(for: url)
-        load(url)
-    }
+    // One AppModel per window (#69). The window's ProjectRef drives loading via
+    // load(path:); the model no longer auto-restores a single project on init.
 
     func reload() {
         refreshData(resetSelection: false)
     }
 
-    private func persistBookmark(for url: URL) {
-        if let data = try? url.bookmarkData(options: .withSecurityScope,
-                                            includingResourceValuesForKeys: nil, relativeTo: nil) {
-            UserDefaults.standard.set(data, forKey: bookmarkKey)
-        }
-    }
+    // MARK: - Opening a project for this window (security-scoped bookmark)
 
-    private func restoreBookmark() {
-        guard let data = UserDefaults.standard.data(forKey: bookmarkKey) else { return }
+    // Loads the project at `path`, resolving its bookmark from ProjectStore. The
+    // window's ProjectRef carries the path; the bookmark grants access. Used both
+    // for in-place opens (reusing an empty window) and for restore on launch.
+    func load(path: String) {
+        guard let data = ProjectStore.bookmark(for: path) else {
+            // No bookmark (e.g. cleared, or restored before being granted access).
+            accessedURL?.stopAccessingSecurityScopedResource()
+            accessedURL = nil
+            rootPath = path
+            project = nil
+            loadError = "Couldn’t access \(path). Open it again to grant access."
+            rebuildSidebar()
+            return
+        }
         var stale = false
         guard let url = try? URL(resolvingBookmarkData: data, options: .withSecurityScope,
-                                 relativeTo: nil, bookmarkDataIsStale: &stale) else { return }
-        load(url)
-        if stale { persistBookmark(for: url) }
-    }
-
-    private func load(_ url: URL) {
+                                 relativeTo: nil, bookmarkDataIsStale: &stale) else {
+            accessedURL?.stopAccessingSecurityScopedResource()
+            accessedURL = nil
+            rootPath = path
+            project = nil
+            loadError = "Couldn’t resolve \(path). It may have moved or been deleted."
+            rebuildSidebar()
+            return
+        }
         accessedURL?.stopAccessingSecurityScopedResource()
         _ = url.startAccessingSecurityScopedResource()
         accessedURL = url
         rootPath = url.path
+        if stale, let fresh = ProjectStore.makeBookmark(for: url) {
+            ProjectStore.saveBookmark(fresh, for: url.path)
+        }
         refreshData(resetSelection: true)
         startWatching(url.path)
+        ProjectStore.markOpen(url.path)   // remembered for reopen-all on launch
+    }
+
+    // Releases this window's security scope and file watcher (on window close).
+    // A user closing a window drops it from the reopen-all set; app termination
+    // (isTerminating) preserves the set so quitting reopens everything.
+    func teardown() {
+        watcher = nil
+        accessedURL?.stopAccessingSecurityScopedResource()
+        accessedURL = nil
+        if !AppDelegate.isTerminating, let path = rootPath, project != nil {
+            ProjectStore.markClosed(path)
+        }
     }
 
     // Reloads all data from disk, rebuilds the sidebar, and (unless resetting)
