@@ -66,14 +66,22 @@ kept byte-for-byte in sync via a shared golden corpus). It presents changes,
 specs, worktrees, and config with native markdown rendering and interactive task
 toggling.
 
-Build and run it from source (requires Xcode):
+Install via Homebrew (preview) — the app ships as a **cask** in the *same*
+`danshort/tap` as the CLI formula (one tap, two install targets):
+
+```bash
+brew tap danshort/tap         # if you haven't already
+brew install --cask danshort/tap/lectern-app
+```
+
+Or build and run it from source (requires Xcode):
 
 ```bash
 cd macos/LecternApp
 swift run            # opens the app; ⌘O to choose a project folder
 ```
 
-Package a distributable `.app`:
+Package a distributable `.app` yourself:
 
 ```bash
 macos/LecternApp/scripts/package.sh 0.1.0   # → macos/LecternApp/dist/Lectern.app + .zip
