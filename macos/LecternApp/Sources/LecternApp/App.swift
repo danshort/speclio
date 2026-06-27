@@ -22,6 +22,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 struct LecternApp: App {
     @NSApplicationDelegateAdaptor(AppDelegate.self) private var delegate
     @StateObject private var model = AppModel()
+    @AppStorage(ContentFont.storageKey) private var contentFontScale = ContentFont.defaultScale
 
     var body: some Scene {
         WindowGroup("lectern") {
@@ -34,6 +35,27 @@ struct LecternApp: App {
                 Button("Open Project…") { model.openPanel() }
                     .keyboardShortcut("o", modifiers: .command)
             }
+            // Content text-size shortcuts (View menu), sharing the same stored
+            // scale as the Settings slider.
+            CommandGroup(after: .toolbar) {
+                Button("Increase Text Size") {
+                    contentFontScale = ContentFont.clamp(contentFontScale + ContentFont.step)
+                }
+                .keyboardShortcut("+", modifiers: .command)
+
+                Button("Decrease Text Size") {
+                    contentFontScale = ContentFont.clamp(contentFontScale - ContentFont.step)
+                }
+                .keyboardShortcut("-", modifiers: .command)
+
+                Button("Actual Size") { contentFontScale = ContentFont.defaultScale }
+                    .keyboardShortcut("0", modifiers: .command)
+                Divider()
+            }
+        }
+
+        Settings {
+            GeneralSettingsView()
         }
     }
 }
