@@ -71,6 +71,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			if tasksChanged {
 				m.tasks.Cursor = openspec.FindCursorByText(m.tasks.Items, cursorText)
 			}
+			delete(m.renderCache, m.tab)
 		}
 		return m, m.loadViewport()
 
