@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.20.0](https://github.com/danshort/lectern/compare/v0.19.0...v0.20.0) (2026-06-27)
+
+
+### Features
+
+* add native macOS app for browsing OpenSpec specs and changes ([1af4d08](https://github.com/danshort/lectern/commit/1af4d08d47fb427b63701f6afeef90446862f96b))
+
+
+### Bug Fixes
+
+* invalidate render cache on editor return ([82eff28](https://github.com/danshort/lectern/commit/82eff28ad16f0f4b503466e3b8beb5000f44cf89))
+* invalidate render cache on editor return ([#82](https://github.com/danshort/lectern/issues/82)) ([8cb2439](https://github.com/danshort/lectern/commit/8cb24396f29a62d68332140c6a4b3ca140437e52))
+
 ## [0.19.0](https://github.com/danshort/lectern/compare/v0.18.0...v0.19.0) (2026-06-25)
 
 
