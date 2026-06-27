@@ -3,6 +3,18 @@ import OpenSpecKit
 
 struct ContentView: View {
     @EnvironmentObject var model: AppModel
+    @Environment(\.openWindow) private var openWindow
+
+    // Open into this window when it's empty, otherwise a new window (or focus an
+    // already-open project) — mirrors the File ▸ Open Project… command (#69).
+    private func openProject() {
+        guard let ref = ProjectStore.chooseProject() else { return }
+        if model.project == nil {
+            model.load(path: ref.path)
+        } else {
+            openWindow(value: ref)
+        }
+    }
 
     var body: some View {
         NavigationSplitView {
@@ -13,7 +25,7 @@ struct ContentView: View {
         }
         .toolbar {
             ToolbarItem(placement: .navigation) {
-                Button { model.openPanel() } label: { Label("Open", systemImage: "folder") }
+                Button { openProject() } label: { Label("Open", systemImage: "folder") }
             }
             ToolbarItem(placement: .principal) {
                 Picker("Mode", selection: $model.mode) {
@@ -149,7 +161,9 @@ struct EmptyProjectState: View {
                 .font(.system(size: 40))
                 .foregroundStyle(.secondary)
             Text("No project open").font(.headline)
-            Button("Open Project…") { model.openPanel() }
+            Button("Open Project…") {
+                if let ref = ProjectStore.chooseProject() { model.load(path: ref.path) }
+            }
             if let err = model.loadError {
                 Text(err)
                     .font(.callout)
