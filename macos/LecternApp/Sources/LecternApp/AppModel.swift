@@ -354,6 +354,41 @@ final class AppModel: ObservableObject {
         return change.flatMap { progressOf($0) }
     }
 
+    // A `·`-separated description of the current location (mode, then the
+    // selected change/spec/artifact where applicable), shown as the window
+    // subtitle beneath the project name (#70). Both the sidebar header and this
+    // trail derive from the same model state, so they never drift.
+    func locationTrail() -> String {
+        var parts: [String] = [mode.rawValue]
+        switch selection {
+        case .artifact(let ref):
+            parts.append(ref.changeName)
+            parts.append(artifactLabel(ref.kind))
+        case .projectSpec(let name):
+            parts.append(name)
+        case .config:
+            parts.append("Project Config")
+        case .worktree(let path):
+            if let wt = worktree(path: path) { parts.append(worktreeTitle(wt)) }
+        case .worktreeArtifact(let path, let name, let kind):
+            if let wt = worktree(path: path) { parts.append(worktreeTitle(wt)) }
+            parts.append(name)
+            parts.append(artifactLabel(kind))
+        case .none:
+            break
+        }
+        return parts.joined(separator: " · ")
+    }
+
+    private func artifactLabel(_ kind: ArtifactKind) -> String {
+        switch kind {
+        case .proposal: return "Proposal"
+        case .design: return "Design"
+        case .tasks: return "Tasks"
+        case .specFile(let name): return name
+        }
+    }
+
     // Worktree state flags for the sidebar subtitle (e.g. "current, locked").
     private func worktreeStateLabel(_ wt: Worktree) -> String? {
         let flags = [

@@ -61,12 +61,20 @@ struct Sidebar: View {
         Group {
             if model.project == nil {
                 EmptyProjectState()
-            } else if model.sidebarNodes.isEmpty {
-                emptyMode
             } else {
-                List(selection: $model.selectedNodeID) {
-                    OutlineGroup(model.sidebarNodes, children: \.children) { node in
-                        SidebarRow(node: node)
+                // Project header pinned above the list so the project name stays
+                // visible across every mode and selection (#70).
+                VStack(spacing: 0) {
+                    ProjectHeader(name: model.project?.name ?? "")
+                    Divider()
+                    if model.sidebarNodes.isEmpty {
+                        emptyMode
+                    } else {
+                        List(selection: $model.selectedNodeID) {
+                            OutlineGroup(model.sidebarNodes, children: \.children) { node in
+                                SidebarRow(node: node)
+                            }
+                        }
                     }
                 }
             }
@@ -82,6 +90,24 @@ struct Sidebar: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .padding()
+    }
+}
+
+// Non-selectable project label at the top of the sidebar — the persistent
+// answer to "which project am I in" (#70).
+struct ProjectHeader: View {
+    let name: String
+
+    var body: some View {
+        Label {
+            Text(name).font(.headline).lineLimit(1).truncationMode(.middle)
+        } icon: {
+            Image(systemName: "books.vertical.fill").foregroundStyle(.secondary)
+        }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 8)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .help(name)
     }
 }
 
@@ -149,6 +175,11 @@ struct DetailView: View {
             }
             detailContent
         }
+        // Project name stays in the window title across every navigation state;
+        // the subtitle carries the current location (#70). Empty when no project
+        // is open, so no project title is shown.
+        .navigationTitle(model.project?.name ?? "")
+        .navigationSubtitle(model.project == nil ? "" : model.locationTrail())
     }
 
     @ViewBuilder
@@ -157,7 +188,6 @@ struct DetailView: View {
         case .artifact(let ref):
             if let change = model.change(named: ref.changeName) {
                 ArtifactDetail(change: change, ref: ref)
-                    .navigationTitle(change.name)
             } else {
                 Placeholder()
             }
@@ -168,20 +198,18 @@ struct DetailView: View {
                     issues: spec.readError ? [] : validateSpec(spec.content)
                 )
                 .id("spec:\(name)")
-                .navigationTitle(name)
             } else {
                 Placeholder()
             }
         case .worktree(let path):
             if let wt = model.worktree(path: path) {
-                WorktreeDetail(worktree: wt).navigationTitle("Worktrees")
+                WorktreeDetail(worktree: wt)
             } else {
                 Placeholder()
             }
         case .config:
             if let cfg = model.projectConfig {
                 ScrollableContent { MarkdownView(configToMarkdown(cfg)) }
-                    .navigationTitle("Project Config")
             } else {
                 Placeholder()
             }
@@ -189,8 +217,6 @@ struct DetailView: View {
             if let change = model.worktreeChange(worktreePath: wtPath, changeName: name) {
                 WorktreeArtifactView(change: change, kind: kind)
                     .id("\(wtPath)#\(name)#\(kind)")
-                    .navigationTitle(name)
-                    .navigationSubtitle("Read-only · \(model.worktree(path: wtPath).map(model.worktreeTitle) ?? "worktree")")
             } else {
                 Placeholder()
             }
