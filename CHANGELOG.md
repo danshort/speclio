@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.20.1](https://github.com/danshort/lectern/compare/v0.20.0...v0.20.1) (2026-06-27)
+
+
+### Bug Fixes
+
+* ship the macOS app icon in released builds ([#88](https://github.com/danshort/lectern/issues/88)) ([fa8514f](https://github.com/danshort/lectern/commit/fa8514fa28e49f1de8ea138cfcd89989a698c837))
+
 ## [0.20.0](https://github.com/danshort/lectern/compare/v0.19.0...v0.20.0) (2026-06-27)
 
 
