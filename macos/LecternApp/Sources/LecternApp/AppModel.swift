@@ -240,7 +240,7 @@ final class AppModel: ObservableObject {
         switch mode {
         case .activeChanges, .archivedChanges:
             nodes = changes(for: mode).map { c in
-                changeNode(c, subtitle: nil, progress: nil, into: &map) { .artifact(ArtifactRef(changeName: c.name, kind: $0)) }
+                changeNode(c, subtitle: nil, progress: progressOf(c), into: &map) { .artifact(ArtifactRef(changeName: c.name, kind: $0)) }
             }
         case .specs:
             nodes = []
@@ -340,6 +340,18 @@ final class AppModel: ObservableObject {
         let tasks = parseTasks(c.tasks.content).filter { $0.kind == .task }
         guard !tasks.isEmpty else { return nil }
         return ChangeProgress(done: tasks.filter(\.done).count, total: tasks.count)
+    }
+
+    // Progress of the change behind the current selection (for the persistent
+    // detail-pane bar), or nil for non-change selections / task-less changes.
+    func currentChangeProgress() -> ChangeProgress? {
+        let change: Change?
+        switch selection {
+        case .artifact(let ref): change = self.change(named: ref.changeName)
+        case .worktreeArtifact(let path, let name, _): change = worktreeChange(worktreePath: path, changeName: name)
+        default: change = nil
+        }
+        return change.flatMap { progressOf($0) }
     }
 
     // Worktree state flags for the sidebar subtitle (e.g. "current, locked").

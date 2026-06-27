@@ -143,6 +143,16 @@ struct DetailView: View {
     @EnvironmentObject var model: AppModel
 
     var body: some View {
+        VStack(spacing: 0) {
+            if let progress = model.currentChangeProgress() {
+                ChangeProgressBar(progress: progress)
+            }
+            detailContent
+        }
+    }
+
+    @ViewBuilder
+    private var detailContent: some View {
         switch model.selection {
         case .artifact(let ref):
             if let change = model.change(named: ref.changeName) {
@@ -213,6 +223,30 @@ struct WorktreeArtifactView: View {
     }
 }
 
+// A thin progress bar pinned at the top of the detail pane (below the toolbar),
+// showing the current change's overall task completion regardless of which
+// artifact is open (#65).
+struct ChangeProgressBar: View {
+    let progress: ChangeProgress
+
+    var body: some View {
+        VStack(spacing: 0) {
+            HStack(spacing: 8) {
+                ProgressView(value: Double(progress.done), total: Double(max(progress.total, 1)))
+                    .progressViewStyle(.linear)
+                Text("\(progress.done)/\(progress.total)")
+                    .font(.caption).monospacedDigit().foregroundStyle(.secondary)
+            }
+            .padding(.horizontal, 16)
+            .padding(.vertical, 6)
+            Divider()
+        }
+        .background(.bar)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("Change progress: \(progress.done) of \(progress.total) tasks complete")
+    }
+}
+
 struct ArtifactDetail: View {
     @EnvironmentObject var model: AppModel
     let change: Change
@@ -247,27 +281,29 @@ struct TasksView: View {
 
     private var tasksPath: String { (changePath as NSString).appendingPathComponent("tasks.md") }
 
-    private var taskItems: [TaskItem] { items.filter { $0.kind == .task } }
-    private var doneCount: Int { taskItems.filter(\.done).count }
-
     var body: some View {
         ScrollableContent {
             if let errorText {
                 Label(errorText, systemImage: "exclamationmark.triangle.fill")
                     .foregroundStyle(.orange).font(.callout)
             }
-            if !taskItems.isEmpty {
-                let total = taskItems.count
-                ProgressView(value: Double(doneCount), total: Double(total)) {
-                    Text("\(doneCount) of \(total) complete").font(.callout).foregroundStyle(.secondary)
-                }
-                .padding(.bottom, 4)
-            }
+            // Overall change progress lives in the persistent bar at the top of
+            // the detail pane (#65); the Tasks view shows only per-section bars.
             ForEach(Array(items.enumerated()), id: \.offset) { index, item in
                 if item.kind == .section {
-                    Text(item.text)
-                        .font(.title3).bold()
-                        .padding(.top, index == 0 ? 0 : 12)
+                    HStack(alignment: .firstTextBaseline) {
+                        Text(item.text).font(.title3).bold()
+                        Spacer(minLength: 12)
+                        if let sp = sectionProgress(startingAfter: index) {
+                            HStack(spacing: 6) {
+                                ProgressView(value: Double(sp.done), total: Double(max(sp.total, 1)))
+                                    .progressViewStyle(.linear)
+                                    .frame(width: 70)
+                                Text("\(sp.done)/\(sp.total)").font(.caption2).monospacedDigit().foregroundStyle(.secondary)
+                            }
+                        }
+                    }
+                    .padding(.top, index == 0 ? 0 : 12)
                 } else if readOnly {
                     taskRow(item)
                         .accessibilityLabel(item.text)
@@ -283,6 +319,21 @@ struct TasksView: View {
         }
         .onAppear { items = parseTasks(content) }
         .onChange(of: content) { newContent in items = parseTasks(newContent) }
+    }
+
+    // Completed/total of the tasks belonging to the section at `index` (the
+    // tasks until the next section), or nil if the section has no tasks.
+    private func sectionProgress(startingAfter index: Int) -> ChangeProgress? {
+        var done = 0, total = 0
+        var i = index + 1
+        while i < items.count, items[i].kind != .section {
+            if items[i].kind == .task {
+                total += 1
+                if items[i].done { done += 1 }
+            }
+            i += 1
+        }
+        return total > 0 ? ChangeProgress(done: done, total: total) : nil
     }
 
     private func taskRow(_ item: TaskItem) -> some View {
