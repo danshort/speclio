@@ -77,6 +77,7 @@ final class AppModel: ObservableObject {
             if mode != oldValue {
                 rebuildSidebar()
                 selectDefault()
+                updateWorktreePolling()
             }
         }
     }
@@ -104,6 +105,8 @@ final class AppModel: ObservableObject {
 
     private var accessedURL: URL?
     private var watcher: DirectoryWatcher?
+    private var worktreePollTimer: Timer?
+    private let worktreePollInterval: TimeInterval = 1.5
 
     // One AppModel per window (#69). The window's ProjectRef drives loading via
     // load(path:); the model no longer auto-restores a single project on init.
@@ -156,10 +159,63 @@ final class AppModel: ObservableObject {
     // (isTerminating) preserves the set so quitting reopens everything.
     func teardown() {
         watcher = nil
+        stopWorktreePolling()
         accessedURL?.stopAccessingSecurityScopedResource()
         accessedURL = nil
         if !AppDelegate.isTerminating, let path = rootPath, project != nil {
             ProjectStore.markClosed(path)
+        }
+    }
+
+    // MARK: - Live worktree progress (polling, mirrors the TUI's pollWorktrees)
+
+    // Run the poll only while the Worktrees mode is active; cross-worktree
+    // progress is visible nowhere else (#62).
+    private func updateWorktreePolling() {
+        if mode == .worktrees { startWorktreePolling() } else { stopWorktreePolling() }
+    }
+
+    private func startWorktreePolling() {
+        guard worktreePollTimer == nil else { return }
+        worktreePollTimer = Timer.scheduledTimer(withTimeInterval: worktreePollInterval,
+                                                 repeats: true) { [weak self] _ in
+            Task { @MainActor in self?.pollWorktreeChanges() }
+        }
+    }
+
+    private func stopWorktreePolling() {
+        worktreePollTimer?.invalidate()
+        worktreePollTimer = nil
+    }
+
+    // Re-read the already-surveyed worktree changes from disk and, if any
+    // content changed, refresh the sidebar (and, via worktreeChanges, the open
+    // read-only artifact). The worktree set itself is NOT re-enumerated here —
+    // add/remove stays on enter/reload, exactly like the TUI captures the set on
+    // entry. reloadChange is disk-only (no git).
+    private func pollWorktreeChanges() {
+        guard mode == .worktrees, !worktreeChanges.isEmpty else { return }
+        let loader = Loader()
+        var next = worktreeChanges
+        var changed = false
+        for (path, changes) in worktreeChanges {
+            var refreshed = changes
+            for i in changes.indices {
+                let fresh = loader.reloadChange(changes[i])
+                if fresh != changes[i] {
+                    refreshed[i] = fresh
+                    changed = true
+                }
+            }
+            next[path] = refreshed
+        }
+        guard changed else { return }   // no spurious rebuilds / selection churn
+
+        worktreeChanges = next
+        let previous = selectedNodeID
+        rebuildSidebar()
+        if let previous, idToSelection[previous] != nil {
+            selectedNodeID = previous
         }
     }
 
