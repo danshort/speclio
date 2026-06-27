@@ -10,7 +10,7 @@ cask "lectern-app" do
   version "0.0.0"
   sha256 :no_check # replaced with the real checksum by the release workflow
 
-  url "https://github.com/danshort/lectern/releases/download/macos-app-v#{version}/Lectern-#{version}.zip"
+  url "https://github.com/danshort/lectern/releases/download/v#{version}/Lectern-#{version}.zip"
   name "Lectern"
   desc "Native macOS reader for OpenSpec artifacts"
   homepage "https://github.com/danshort/lectern"

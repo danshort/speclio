@@ -1,16 +1,27 @@
 name: macOS app release
 
-# Decoupled from the CLI release (release.yml runs on push to main via
-# release-please). This runs only on a macos-app-v* tag (or manual dispatch),
-# so a macOS build/notarization outage can never block a `brew install lectern`
-# CLI release.
+# Builds + publishes the native macOS app and updates its Homebrew cask.
+#
+# Invoked two ways:
+#   - workflow_call  — from release.yml on each release (release_created), at the
+#                      unified repo version, as a job that is INDEPENDENT of the
+#                      CLI/goreleaser job so a macOS build failure can never block
+#                      `brew install lectern`.
+#   - workflow_dispatch — manual rebuild of a specific version.
+#
+# The zip is attached to the same v<version> GitHub release the CLI binaries go
+# to, and the cask is pushed to danshort/homebrew-tap.
 on:
-  push:
-    tags: ['macos-app-v*']
+  workflow_call:
+    inputs:
+      version:
+        description: 'Release version (with or without a leading v)'
+        required: true
+        type: string
   workflow_dispatch:
     inputs:
       version:
-        description: 'Version, e.g. 0.1.0'
+        description: 'Version, e.g. 0.20.0 (or v0.20.0)'
         required: true
 
 permissions:
@@ -34,28 +45,50 @@ jobs:
       - name: Determine version
         id: ver
         run: |
-          if [ -n "${{ github.event.inputs.version }}" ]; then
-            echo "version=${{ github.event.inputs.version }}" >> "$GITHUB_OUTPUT"
-          else
-            echo "version=${GITHUB_REF_NAME#macos-app-v}" >> "$GITHUB_OUTPUT"
-          fi
+          raw="${{ inputs.version }}"
+          echo "version=${raw#v}" >> "$GITHUB_OUTPUT"
 
       # Ad-hoc by default; Developer-ID when the MACOS_SIGN_IDENTITY secret is
-      # set (empty/unset → package.sh falls back to ad-hoc). Notarization is
-      # added once the Apple Developer account is approved — see issue #67.
+      # set (empty/unset → package.sh falls back to ad-hoc). The notarize step
+      # slots in here once the Apple Developer account is approved — see #67.
       - name: Package app
         env:
           SIGN_IDENTITY: ${{ secrets.MACOS_SIGN_IDENTITY }}
         run: macos/LecternApp/scripts/package.sh "${{ steps.ver.outputs.version }}"
 
-      - name: Create release and upload
+      - name: Attach app to the release
         env:
-          GH_TOKEN: ${{ github.token }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           V="${{ steps.ver.outputs.version }}"
-          gh release create "macos-app-v$V" \
-            "macos/LecternApp/dist/Lectern-$V.zip" \
-            --title "Lectern (macOS) v$V" \
-            --notes "Preview build of the native macOS reader (OpenSpec viewer).
+          gh release upload "v$V" "macos/LecternApp/dist/Lectern-$V.zip" --clobber
 
-          Ad-hoc signed, not yet notarized — on first launch right-click Lectern.app → Open (or \`xattr -dr com.apple.quarantine\`). Notarized builds will follow (see #67)."
+      # Render the cask from the in-repo template (single source) with the real
+      # version + checksum, and publish it to the tap so
+      # `brew install --cask danshort/tap/lectern-app` installs this build.
+      - name: Publish Homebrew cask
+        env:
+          HOMEBREW_TAP_TOKEN: ${{ secrets.HOMEBREW_TAP_TOKEN }}
+        run: |
+          set -euo pipefail
+          V="${{ steps.ver.outputs.version }}"
+          ZIP="macos/LecternApp/dist/Lectern-$V.zip"
+          SHA="$(shasum -a 256 "$ZIP" | awk '{print $1}')"
+          rendered="$(mktemp)"
+          sed -e "s/^  version \".*\"/  version \"$V\"/" \
+              -e "s|^  sha256 :no_check.*|  sha256 \"$SHA\"|" \
+              macos/Casks/lectern-app.rb > "$rendered"
+          tap="$(mktemp -d)"
+          git clone --depth 1 "https://x-access-token:${HOMEBREW_TAP_TOKEN}@github.com/danshort/homebrew-tap.git" "$tap"
+          mkdir -p "$tap/Casks"
+          cp "$rendered" "$tap/Casks/lectern-app.rb"
+          cd "$tap"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add Casks/lectern-app.rb
+          if git diff --cached --quiet; then
+            echo "Cask already current for $V"
+          else
+            git commit -m "lectern-app $V"
+            git push
+          fi
