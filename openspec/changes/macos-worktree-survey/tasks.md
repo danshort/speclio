@@ -29,4 +29,4 @@
 - [x] 6.1 Graphical progress bar on worktree change rows in the sidebar (alongside/instead of the textual done/total)
 - [x] 6.2 "(no active changes)" affordance for a non-bare worktree that has an `openspec/` project but zero active changes (distinct from bare / no-project)
 - [x] 6.3 Surface worktree state in the sidebar label: `locked`/`prunable` flags, and a short HEAD SHA for detached worktrees
-- [ ] 6.4 `swift build` green; manual QA against the sample worktrees
+- [x] 6.4 `swift build` green; manual QA against the sample worktrees
