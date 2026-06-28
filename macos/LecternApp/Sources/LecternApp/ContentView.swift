@@ -473,6 +473,12 @@ struct TasksView: View {
                     .onChange(of: editorFocused) { focused in
                         if !focused, editingID == id(item) { commitEdit(item) }
                     }
+                // ⌘-Return saves (Return inserts a line in the multi-line box).
+                Button("") { commitEdit(item) }
+                    .keyboardShortcut(.return, modifiers: .command)
+                    .frame(width: 0, height: 0)
+                    .opacity(0)
+                    .accessibilityHidden(true)
             } else {
                 Text(item.text)
                     .strikethrough(item.done, color: .secondary)
