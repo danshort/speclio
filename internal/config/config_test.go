@@ -43,6 +43,15 @@ func TestLoadFile(t *testing.T) {
 		}
 	})
 
+	t.Run("smart-quoted value is rejected (real QA failure)", func(t *testing.T) {
+		// A curly opening quote is invalid TOML; this must error (and be
+		// surfaced), not silently fall back to defaults.
+		_, err := LoadFile(write(t, "[editor]\nopen_with = “system\"\n"))
+		if err == nil {
+			t.Error("expected a parse error for a smart-quoted value")
+		}
+	})
+
 	t.Run("unknown keys are ignored", func(t *testing.T) {
 		c, err := LoadFile(write(t, "future_thing = 42\n[editor]\nopen_with = \"nvim\"\nunknown = true\n"))
 		if err != nil {

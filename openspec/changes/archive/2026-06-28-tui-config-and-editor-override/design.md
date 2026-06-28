@@ -40,6 +40,12 @@ Resolution at open time:
 ### D4 — Threading + launch hardening
 `main.go` loads the user config alongside the project config and passes the resolved editor preference into the model. `openInEditor` branches on mode: terminal → `ExecProcess` (as today); detached → resolve the platform handler, verify it exists on `PATH`, `Start()` it, and return immediately. In both modes, a failure to launch (opener missing, exec error) sets `m.errMsg` instead of being dropped — fixing `viewer.go:170`, which currently returns `editorReturnMsg{}` and ignores the error.
 
+### D5 — Surface a rejected config in the TUI (not just stderr)
+A malformed config (e.g. a value typed with curly "smart" quotes — a real failure hit during QA) returns a parse error from `config.Load`. `main.go` warns on stderr *and* threads the message into the model's `errMsg` (a `startupWarn` constructor argument), because the TUI's alternate screen hides stderr during a session — otherwise the rejection reads as a silent fallback to `$EDITOR`.
+
+### D6 — Open the config from the TUI
+A `c` keybinding (index + change-viewer modes) opens the config file in the resolved editor, via `config.EnsureFile`, which creates a documented, all-defaults starter file when none exists. Changes apply on next launch (consistent with "read once at startup"); a live-applying in-TUI settings screen is deferred (#111).
+
 ## Risks / Trade-offs
 
 - **New dependency (`BurntSushi/toml`)** → standard, stable, vuln-clean; acceptable.
