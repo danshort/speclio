@@ -17,4 +17,4 @@
 
 - [x] 3.1 `swift build` (LecternApp) compiles; OpenSpecKit tests + golden corpus stay green; Go untouched.
 - [x] 3.2 `openspec validate macos-undo-task-mutations --strict` passes.
-- [ ] 3.3 Manual QA (user): for each of toggle / inline-edit / add / delete / reorder / move-across-sections — perform it, `⌘Z` reverts on disk and in the view, `⌘⇧Z` re-applies; Edit menu shows the right "Undo <Action>" label; a delete+undo restores number and position exactly; performing a mutation, editing `tasks.md` externally, then `⌘Z` is a guarded no-op with a notice (no clobber).
+- [x] 3.3 Manual QA (user): for each of toggle / inline-edit / add / delete / reorder / move-across-sections — perform it, `⌘Z` reverts on disk and in the view, `⌘⇧Z` re-applies; Edit menu shows the right "Undo <Action>" label; a delete+undo restores number and position exactly; performing a mutation, editing `tasks.md` externally, then `⌘Z` is a guarded no-op with a notice (no clobber).
