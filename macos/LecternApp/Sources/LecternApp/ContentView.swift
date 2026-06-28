@@ -318,14 +318,30 @@ struct TasksView: View {
 
     @State private var items: [TaskItem] = []
     @State private var errorText: String?
+    @State private var notice: String?            // file-changed-on-disk notice (#97 conflict)
+    @State private var selectedID: String?        // identity of the selected task (add/delete target)
+    @State private var editingID: String?          // identity of the task being inline-edited
+    @State private var editingText: String = ""
+    @State private var pendingDelete: TaskItem?    // task awaiting delete confirmation
+    @State private var hoveredID: String?          // row under the pointer (reveals affordances)
+    @State private var dropTargetID: String?       // row a drag is currently over (insertion line)
+    @FocusState private var editorFocused: Bool    // drives focus + commit-on-blur for inline edit
 
     private var tasksPath: String { (changePath as NSString).appendingPathComponent("tasks.md") }
+
+    // Stable per-task identity within the view (section prefix + number-stripped
+    // description), used for selection, editing, and drag payloads.
+    private func id(_ item: TaskItem) -> String { item.sectionPrefix + "\u{1}" + item.taskDescription }
 
     var body: some View {
         ScrollableContent {
             if let errorText {
                 Label(errorText, systemImage: "exclamationmark.triangle.fill")
                     .foregroundStyle(.orange).font(.callout)
+            }
+            if let notice {
+                Label(notice, systemImage: "arrow.clockwise")
+                    .foregroundStyle(.secondary).font(.callout)
             }
             // Overall change progress lives in the persistent bar at the top of
             // the detail pane (#65); the Tasks view shows only per-section bars.
@@ -349,16 +365,40 @@ struct TasksView: View {
                         .accessibilityLabel(item.text)
                         .accessibilityValue(item.done ? "completed" : "not completed")
                 } else {
-                    Button { toggle(item) } label: { taskRow(item) }
-                        .buttonStyle(.plain)
-                        .accessibilityLabel(item.text)
-                        .accessibilityValue(item.done ? "completed" : "not completed")
-                        .accessibilityHint("Toggles this task")
+                    editableTaskRow(item)
+                    if isLastTaskOfSection(index) {
+                        endOfSectionDropZone(prefix: item.sectionPrefix)
+                    }
                 }
             }
         }
+        // Clicking empty space (where no row intercepts) saves the open edit.
+        .background(
+            Color.clear
+                .contentShape(Rectangle())
+                .onTapGesture { commitActiveEdit() }
+        )
         .onAppear { items = parseTasks(content) }
-        .onChange(of: content) { newContent in items = parseTasks(newContent) }
+        .onChange(of: content) { newContent in
+            // External reload (incl. FSEvents): re-parse and drop any stale
+            // selection/edit state that no longer points at a live task.
+            items = parseTasks(newContent)
+            let live = Set(items.filter { $0.kind == .task }.map(id))
+            if let s = selectedID, !live.contains(s) { selectedID = nil }
+            if let e = editingID, !live.contains(e) { editingID = nil }
+        }
+        .confirmationDialog("Delete this task?",
+                            isPresented: Binding(get: { pendingDelete != nil },
+                                                 set: { if !$0 { pendingDelete = nil } }),
+                            titleVisibility: .visible) {
+            Button("Delete", role: .destructive) {
+                if let item = pendingDelete { performDelete(item) }
+                pendingDelete = nil
+            }
+            Button("Cancel", role: .cancel) { pendingDelete = nil }
+        } message: {
+            if let item = pendingDelete { Text(item.taskDescription) }
+        }
     }
 
     // Completed/total of the tasks belonging to the section at `index` (the
@@ -387,12 +427,247 @@ struct TasksView: View {
     }
 
     private func toggle(_ item: TaskItem) {
+        commitActiveEdit()   // toggling another task saves the open edit
         do {
             items = try toggleTaskByText(tasksPath, item.text)
-            errorText = nil
+            errorText = nil; notice = nil
         } catch {
             errorText = "Couldn't write tasks.md: \(error.localizedDescription)"
         }
+    }
+
+    // ── Editing UI (#97) ──────────────────────────────────────────────────────
+
+    @ViewBuilder
+    private func editableTaskRow(_ item: TaskItem) -> some View {
+        let rowID = id(item)
+        let hovered = hoveredID == rowID
+        let editing = editingID == rowID
+        // Affordances appear on hover (mouse) or selection (click/keyboard).
+        let showControls = (hovered || selectedID == rowID) && !editing
+        HStack(alignment: .firstTextBaseline, spacing: 6) {
+            // Drag handle — the ONLY draggable element, so clicks on the row's
+            // buttons aren't swallowed by the drag gesture. Reserved width keeps
+            // the layout stable; it just fades in on hover to signal draggability.
+            Image(systemName: "line.3.horizontal")
+                .foregroundStyle(hovered ? .secondary : .tertiary)
+                .frame(width: 18, height: 20)
+                .contentShape(Rectangle())
+                .opacity(hovered ? 1 : 0.4)   // faintly visible at rest so it's discoverable + grabbable
+                .draggable(rowID)
+                .help("Drag to reorder or move to another section")
+                .accessibilityLabel("Reorder handle for \(item.taskDescription)")
+
+            // Checkbox toggles.
+            Button { toggle(item) } label: {
+                Image(systemName: item.done ? "checkmark.square.fill" : "square")
+                    .foregroundStyle(item.done ? Color.accentColor : .secondary)
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel(item.done ? "Completed" : "Not completed")
+            .accessibilityHint("Toggles this task")
+
+            if editing {
+                // Three-line wrapping editor. Tasks are single-line on disk, so
+                // commitEdit collapses any newline to a space; Return adds a line
+                // visually, clicking away (focus loss) saves, Esc cancels.
+                TextField("Task", text: $editingText, axis: .vertical)
+                    .lineLimit(3, reservesSpace: true)
+                    .textFieldStyle(.roundedBorder)
+                    .focused($editorFocused)
+                    .onAppear { editorFocused = true }
+                    .onExitCommand { editingID = nil }   // Esc cancels (no save)
+                    .onChange(of: editorFocused) { focused in
+                        if !focused, editingID == id(item) { commitEdit(item) }
+                    }
+                // ⌘-Return saves (Return inserts a line in the multi-line box).
+                Button("") { commitEdit(item) }
+                    .keyboardShortcut(.return, modifiers: .command)
+                    .frame(width: 0, height: 0)
+                    .opacity(0)
+                    .accessibilityHidden(true)
+            } else {
+                Text(item.text)
+                    .strikethrough(item.done, color: .secondary)
+                    .foregroundStyle(item.done ? .secondary : .primary)
+                    .contentShape(Rectangle())
+                    .onTapGesture(count: 2) { beginEdit(item) }
+                    .onTapGesture {
+                        commitActiveEdit()   // tapping another row saves the open edit
+                        selectedID = selectedID == rowID ? nil : rowID
+                    }
+            }
+
+            Spacer(minLength: 8)
+
+            // Always laid out (reserving width + height) and only faded in on
+            // hover — so revealing them never reflows text or shifts row height.
+            HStack(spacing: 2) {
+                rowControl("pencil", "Edit this task", "Edit \(item.taskDescription)") { beginEdit(item) }
+                rowControl("plus", "Add a task after this one", "Add task after \(item.taskDescription)") {
+                    performAdd(after: item)
+                }
+                rowControl("minus", "Delete this task", "Delete \(item.taskDescription)") {
+                    pendingDelete = item
+                }
+            }
+            .opacity(showControls ? 1 : 0)
+            .allowsHitTesting(showControls)
+        }
+        .padding(.vertical, 2)
+        // Fill the row's full width and make the entire strip hit-testable, so
+        // hover (and the affordances it reveals) covers the whole row — not just
+        // the text/checkbox glyphs.
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(selectedID == rowID ? Color.accentColor.opacity(0.12) : Color.clear)
+        // Insertion line: a drag currently hovering this row will drop above it.
+        .overlay(alignment: .top) {
+            Rectangle().fill(Color.accentColor).frame(height: 2)
+                .opacity(dropTargetID == rowID ? 1 : 0)
+        }
+        .contentShape(Rectangle())
+        .onHover { inside in
+            if inside { hoveredID = rowID } else if hoveredID == rowID { hoveredID = nil }
+        }
+        .accessibilityElement(children: .combine)
+        .accessibilityValue(item.done ? "completed" : "not completed")
+        .dropDestination(for: String.self) { payload, _ in
+            dropTargetID = nil
+            guard let dropped = payload.first else { return false }
+            performMove(draggedID: dropped, onto: item)
+            return true
+        } isTargeted: { targeted in
+            if targeted { dropTargetID = rowID } else if dropTargetID == rowID { dropTargetID = nil }
+        }
+    }
+
+    // A small hover-revealed row affordance with a comfortable hit target.
+    private func rowControl(_ symbol: String, _ help: String, _ label: String,
+                            action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            Image(systemName: symbol)
+                .foregroundStyle(.primary)        // clearly visible (the row already gates on hover)
+                .frame(width: 26, height: 22)
+                .contentShape(Rectangle())        // full frame is clickable, not just the glyph
+        }
+        .buttonStyle(.borderless)
+        .help(help)
+        .accessibilityLabel(label)
+    }
+
+    // True when `index` is a task and the next item is a section or the end of
+    // the list — i.e. the last task of its section. (items holds only sections
+    // and tasks.)
+    private func isLastTaskOfSection(_ index: Int) -> Bool {
+        guard items[index].kind == .task else { return false }
+        let next = index + 1
+        return next >= items.count || items[next].kind == .section
+    }
+
+    // A drop target at the bottom of a section so a task can be moved to the very
+    // end (the per-row targets only insert *above* a row). Subtle until a drag is
+    // over it, when it shows the same insertion line.
+    @ViewBuilder
+    private func endOfSectionDropZone(prefix: String) -> some View {
+        let zoneID = "\u{2}END\u{1}" + prefix
+        Color.clear
+            .frame(maxWidth: .infinity)
+            .frame(height: 12)
+            .overlay(alignment: .top) {
+                Rectangle().fill(Color.accentColor).frame(height: 2)
+                    .opacity(dropTargetID == zoneID ? 1 : 0)
+            }
+            .contentShape(Rectangle())
+            .dropDestination(for: String.self) { payload, _ in
+                dropTargetID = nil
+                guard let dropped = payload.first else { return false }
+                performMoveToEnd(draggedID: dropped, sectionPrefix: prefix)
+                return true
+            } isTargeted: { targeted in
+                if targeted { dropTargetID = zoneID } else if dropTargetID == zoneID { dropTargetID = nil }
+            }
+            .accessibilityHidden(true)
+    }
+
+    private func beginEdit(_ item: TaskItem) {
+        if let eid = editingID, eid != id(item) { commitActiveEdit() }  // switching rows saves
+        editingID = id(item)
+        editingText = item.taskDescription
+        selectedID = id(item)
+    }
+
+    // Commit whatever row is currently being edited (used by "click away"
+    // gestures, since a macOS TextField doesn't resign focus on outside clicks).
+    private func commitActiveEdit() {
+        guard let eid = editingID,
+              let item = items.first(where: { $0.kind == .task && id($0) == eid }) else { return }
+        commitEdit(item)
+    }
+
+    private func commitEdit(_ item: TaskItem) {
+        // Collapse any visual newlines to spaces — tasks.md tasks are single-line.
+        let newText = trimSpaceLocal(editingText
+            .replacingOccurrences(of: "\r", with: " ")
+            .replacingOccurrences(of: "\n", with: " "))
+        editingID = nil
+        guard !newText.isEmpty, newText != item.taskDescription else { return }
+        run { try editTaskText(tasksPath, identity: item.taskDescription,
+                               inSection: item.sectionPrefix, newDescription: newText) }
+    }
+
+    private func performAdd(after item: TaskItem) {
+        run { try addTask(tasksPath, afterIdentity: item.taskDescription,
+                          inSection: item.sectionPrefix, description: "New task") }
+        // Select + edit the freshly added task for immediate typing.
+        let newItem = TaskItem(kind: .task, text: "", done: false, lineNum: 0,
+                               sectionPrefix: item.sectionPrefix, ordinal: item.ordinal + 1,
+                               taskDescription: "New task")
+        beginEdit(newItem)
+    }
+
+    private func performDelete(_ item: TaskItem) {
+        run { try deleteTask(tasksPath, identity: item.taskDescription, inSection: item.sectionPrefix) }
+        if selectedID == id(item) { selectedID = nil }
+    }
+
+    private func performMove(draggedID: String, onto target: TaskItem) {
+        let parts = draggedID.split(separator: "\u{1}", maxSplits: 1, omittingEmptySubsequences: false)
+        guard parts.count == 2 else { return }
+        let fromPrefix = String(parts[0]), draggedDesc = String(parts[1])
+        guard !(fromPrefix == target.sectionPrefix && draggedDesc == target.taskDescription) else { return }
+        run { try moveTask(tasksPath, identity: draggedDesc, fromSection: fromPrefix,
+                           toSection: target.sectionPrefix, toIndex: max(0, target.ordinal - 1)) }
+    }
+
+    // Drop onto a section's end zone: append the dragged task to that section.
+    private func performMoveToEnd(draggedID: String, sectionPrefix prefix: String) {
+        let parts = draggedID.split(separator: "\u{1}", maxSplits: 1, omittingEmptySubsequences: false)
+        guard parts.count == 2 else { return }
+        let fromPrefix = String(parts[0]), draggedDesc = String(parts[1])
+        run { try moveTask(tasksPath, identity: draggedDesc, fromSection: fromPrefix,
+                           toSection: prefix, toIndex: Int.max) }
+    }
+
+    // Runs an edit op, mapping a conflict to a visible notice + disk refresh.
+    private func run(_ op: () throws -> [TaskItem]) {
+        do {
+            items = try op(); errorText = nil; notice = nil
+        } catch TaskEditError.fileChanged {
+            notice = "tasks.md changed on disk — refreshed."
+            refreshFromDisk()
+        } catch {
+            errorText = "Couldn't write tasks.md: \(error.localizedDescription)"
+        }
+    }
+
+    private func refreshFromDisk() {
+        if let data = try? Data(contentsOf: URL(fileURLWithPath: tasksPath)) {
+            items = parseTasks(String(decoding: data, as: UTF8.self))
+        }
+    }
+
+    private func trimSpaceLocal(_ s: String) -> String {
+        s.trimmingCharacters(in: .whitespacesAndNewlines)
     }
 }
 

@@ -65,7 +65,24 @@ A native SwiftUI reader is in development under [`macos/`](macos/) — it reuses
 same domain logic as the CLI (the `OpenSpecKit` Swift port of `internal/openspec`,
 kept byte-for-byte in sync via a shared golden corpus). It presents changes,
 specs, worktrees, and config with native markdown rendering and interactive task
-toggling.
+editing.
+
+In the Tasks view of a change in the current worktree you can edit `tasks.md`
+directly — hover a task to reveal its controls:
+
+- **Toggle** a checkbox to mark a task done.
+- **Add** (`+`) a task after the selected one, **delete** (`−`) with confirmation,
+  and **edit** (✎) the text inline (a three-line wrapping box; **⌘-Return** or
+  clicking away saves, **Esc** cancels).
+- **Drag** the handle (`☰`) to reorder within a section or move a task to another
+  section, including a drop zone at the end of each section. Task numbers
+  (`1.1`, `1.2`, …) renumber automatically; section prefixes (e.g. `3b`) are
+  preserved.
+
+Edits are written surgically and re-read just before saving, so a change made by
+an agent working the same file won't be clobbered; if the file moved underneath
+an edit, the app refreshes and tells you. Changes opened from **other worktrees**
+are read-only.
 
 Install via Homebrew (preview) — the app ships as a **cask** in the *same*
 `danshort/tap` as the CLI formula (one tap, two install targets):
