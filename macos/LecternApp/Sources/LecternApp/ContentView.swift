@@ -451,6 +451,10 @@ struct TasksView: View {
         do {
             items = try toggleTaskByText(tasksPath, item.text)
             errorText = nil; notice = nil
+        } catch TaskEditError.fileChanged {
+            // The task vanished since render — tell the user and re-sync (#101).
+            notice = "Couldn't find that task — it may have changed on disk; refreshed."
+            refreshFromDisk()
         } catch {
             errorText = "Couldn't write tasks.md: \(error.localizedDescription)"
         }

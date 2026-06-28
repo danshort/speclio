@@ -89,7 +89,9 @@ public func toggleTaskByText(_ path: String, _ text: String,
     var items = parseTasks(String(decoding: data, as: UTF8.self))
     let idx = findCursorByText(items, text)
     guard idx < items.count, items[idx].kind == .task, items[idx].text == text else {
-        return items
+        // The task is gone (edited/removed externally) — a conflict, not a
+        // silent no-op, so the caller can notify and refresh (#101).
+        throw TaskEditError.fileChanged
     }
     try toggleTask(path, &items, idx, fs: fs)
     return items
