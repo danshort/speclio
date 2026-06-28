@@ -32,7 +32,7 @@ type Opener struct {
 //   - "system"        → OS default handler — detached
 //   - anything else   → that command (fields) — terminal
 func ResolveOpener(openWith string) Opener {
-	switch openWith {
+	switch strings.TrimSpace(openWith) {
 	case "system":
 		name, args := systemHandler()
 		return Opener{Mode: OpenDetached, Name: name, Args: args}

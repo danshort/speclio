@@ -45,6 +45,13 @@ func TestResolveOpener(t *testing.T) {
 		}
 	})
 
+	t.Run("surrounding whitespace around a keyword is tolerated", func(t *testing.T) {
+		op := ResolveOpener("  system  ")
+		if op.Mode != OpenDetached {
+			t.Errorf("' system ' should resolve to the detached system handler, got %+v", op)
+		}
+	})
+
 	t.Run("custom command resolves to a terminal editor", func(t *testing.T) {
 		op := ResolveOpener("nvim")
 		if op.Mode != OpenTerminal || op.Name != "nvim" {

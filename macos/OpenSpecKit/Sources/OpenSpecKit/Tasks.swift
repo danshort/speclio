@@ -18,10 +18,11 @@ func sectionPrefix(fromHeading heading: String) -> String {
     rxSectionPrefix.firstCapture(heading) ?? ""
 }
 
-/// taskIdentity is the stable key for safe writes: the description with any
-/// wrapping `~~…~~` strikethrough markers removed and the leading
-/// `<prefix>.<ordinal>` number stripped. Renumbering changes the number but not
-/// the identity, so re-read-before-write still finds the right line.
+/// taskIdentity is the stable key for safe writes: the description with all
+/// `~~` strikethrough markers removed (anywhere in the text, not just wrapping)
+/// and the leading `<prefix>.<ordinal>` number stripped. Renumbering changes the
+/// number but not the identity, so re-read-before-write still finds the right
+/// line. (Two tasks differing only in `~~`-emphasis collide — see #115.)
 public func taskIdentity(_ taskText: String) -> String {
     let unstruck = taskText.replacingOccurrences(of: "~~", with: "")
     if let m = rxTaskNumber.firstCapture(unstruck, 3) {

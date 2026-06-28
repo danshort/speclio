@@ -172,9 +172,10 @@ func (m *Model) openInEditor(path string) tea.Cmd {
 	}
 
 	args := append(append([]string{}, op.Args...), path)
-	// #nosec G204 -- opens the user's own editor/handler on a file in their own
-	// project. No shell is invoked (exec.Command does not interpret shell
-	// metacharacters), so this is not command injection.
+	// #nosec G204 -- opens the user's own editor/handler on a fixed project file.
+	// No shell is invoked on macOS/Linux (open/xdg-open via exec.Command, no shell
+	// metacharacter interpretation); the Windows "system" handler is cmd /c start,
+	// which gets the fixed artifact path (not user input), so this is not injection.
 	cmd := exec.Command(op.Name, args...)
 
 	if op.Mode == config.OpenDetached {
@@ -183,6 +184,8 @@ func (m *Model) openInEditor(path string) tea.Cmd {
 			m.errMsg = "could not open: " + err.Error()
 			return clearErrAfter()
 		}
+		// Reap the short-lived launcher so it doesn't linger as a zombie.
+		go func() { _ = cmd.Wait() }()
 		return nil
 	}
 

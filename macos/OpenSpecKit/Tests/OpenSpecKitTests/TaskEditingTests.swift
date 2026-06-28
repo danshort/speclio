@@ -82,6 +82,16 @@ final class TaskEditingTests: XCTestCase {
             "## 1. S\n\n- [ ] 1.1 b\n- [ ] 1.2 c\n- [ ] 1.3 a\n")
     }
 
+    // #114 B1: a downward same-section drag must land the task immediately before
+    // the drop target, not one past it (removing the source first shifts slots).
+    func testReorderDownwardWithinSection() throws {
+        let path = try writeTemp("## 1. S\n\n- [ ] 1.1 a\n- [ ] 1.2 b\n- [ ] 1.3 c\n- [ ] 1.4 d\n")
+        // Drag "a" to just above "c" (drop target c → toIndex = c.ordinal-1 = 2).
+        try moveTask(path, identity: "a", fromSection: "1", toSection: "1", toIndex: 2)
+        XCTAssertEqual(try read(path),
+            "## 1. S\n\n- [ ] 1.1 b\n- [ ] 1.2 a\n- [ ] 1.3 c\n- [ ] 1.4 d\n")
+    }
+
     // ── Cross-section move adopts destination prefix, renumbers both (3.4) ─────
 
     func testMoveAcrossSectionsAdoptsPrefixAndRenumbers() throws {
@@ -107,6 +117,14 @@ final class TaskEditingTests: XCTestCase {
         let path = try writeTemp("## 2. S\n\n- [x] 2.1 Implment API\n")
         try editTaskText(path, identity: "Implment API", inSection: "2", newDescription: "Implement API")
         XCTAssertEqual(try read(path), "## 2. S\n\n- [x] 2.1 Implement API\n")
+    }
+
+    // #114 B4: a newline in the new description must be flattened to a space so it
+    // can't inject a stray non-task line into the file.
+    func testEditTextFlattensNewlines() throws {
+        let path = try writeTemp("## 1. S\n\n- [ ] 1.1 alpha\n")
+        try editTaskText(path, identity: "alpha", inSection: "1", newDescription: "line1\nline2")
+        XCTAssertEqual(try read(path), "## 1. S\n\n- [ ] 1.1 line1 line2\n")
     }
 
     // ── Conflict: target no longer present → abort, no write (3.6, D5) ─────────

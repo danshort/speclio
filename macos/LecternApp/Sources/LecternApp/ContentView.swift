@@ -326,6 +326,7 @@ struct TasksView: View {
     @State private var hoveredID: String?          // row under the pointer (reveals affordances)
     @State private var dropTargetID: String?       // row a drag is currently over (insertion line)
     @FocusState private var editorFocused: Bool    // drives focus + commit-on-blur for inline edit
+    @State private var cancellingEdit = false      // set by Esc so commit-on-blur doesn't save
 
     private var tasksPath: String { (changePath as NSString).appendingPathComponent("tasks.md") }
 
@@ -476,8 +477,14 @@ struct TasksView: View {
                     .textFieldStyle(.roundedBorder)
                     .focused($editorFocused)
                     .onAppear { editorFocused = true }
-                    .onExitCommand { editingID = nil }   // Esc cancels (no save)
+                    .onExitCommand {              // Esc cancels (no save)
+                        cancellingEdit = true
+                        editingID = nil
+                    }
                     .onChange(of: editorFocused) { focused in
+                        // Commit on blur — unless Esc is cancelling this edit.
+                        // (The flag removes the dependency on Esc-vs-blur ordering.)
+                        guard !cancellingEdit else { return }
                         if !focused, editingID == id(item) { commitEdit(item) }
                     }
                 // ⌘-Return saves (Return inserts a line in the multi-line box).
@@ -591,6 +598,7 @@ struct TasksView: View {
 
     private func beginEdit(_ item: TaskItem) {
         if let eid = editingID, eid != id(item) { commitActiveEdit() }  // switching rows saves
+        cancellingEdit = false
         editingID = id(item)
         editingText = item.taskDescription
         selectedID = id(item)

@@ -2,9 +2,9 @@ package ui
 
 import (
 	"fmt"
+	"path/filepath"
 	"regexp"
 	"strings"
-	"time"
 
 	tea "charm.land/bubbletea/v2"
 	"charm.land/lipgloss/v2"
@@ -69,10 +69,10 @@ func (m *Model) doToggle() tea.Cmd {
 	// line (#91). Adopt the freshly parsed items and keep the cursor on the
 	// same task by text.
 	cursorText := m.tasks.Items[m.tasks.Cursor].Text
-	items, err := m.loader.ToggleTaskByText(ch.Path+"/tasks.md", cursorText)
+	items, err := m.loader.ToggleTaskByText(filepath.Join(ch.Path, openspec.FileTasks), cursorText)
 	if err != nil {
 		m.errMsg = "error: " + err.Error()
-		return tea.Tick(3*time.Second, func(time.Time) tea.Msg { return errClearMsg{} })
+		return clearErrAfter()
 	}
 	m.tasks.Items = items
 	m.tasks.Cursor = openspec.FindCursorByText(items, cursorText)

@@ -86,8 +86,14 @@ private func renumber(_ lines: inout [String], section: RawSection, prefix: Stri
 /// with the document's prevailing line ending. Ordinal is a placeholder fixed
 /// by the subsequent renumber pass.
 private func newTaskLine(prefix: String, description: String, crlf: Bool) -> String {
-    let content = "- [ ] \(prefix).0 \(description)"
+    let content = "- [ ] \(prefix).0 \(singleLine(description))"
     return crlf ? content + "\r" : content
+}
+
+/// singleLine collapses any newline to a space, enforcing the single-line task
+/// invariant so a description can't inject extra (non-task) lines into the file.
+private func singleLine(_ s: String) -> String {
+    s.replacingOccurrences(of: "\r", with: " ").replacingOccurrences(of: "\n", with: " ")
 }
 
 /// Identity of a raw line if it is a task, else nil (CR-tolerant).
@@ -130,8 +136,8 @@ private func writeAndParse(_ path: String, _ lines: [String], fs: FileSystem) th
 // affected section(s), and writes. Returns the freshly parsed items.
 
 /// Inserts a new pending task immediately after the task identified by
-/// `afterIdentity` within section `prefix`. Falls back to end-of-section when
-/// the anchor is absent only if `prefix` has no such task — otherwise conflict.
+/// `afterIdentity` within section `prefix`. If that anchor is no longer present
+/// on the pre-write re-read, the edit conflicts (`.fileChanged`).
 @discardableResult
 public func addTask(_ path: String, afterIdentity: String, inSection prefix: String,
                     description: String, fs: FileSystem = OSFileSystem()) throws -> [TaskItem] {
@@ -183,7 +189,7 @@ public func editTaskText(_ path: String, identity: String, inSection prefix: Str
           let number = rxRenumber.firstCapture(lineContent, 2) else {
         throw TaskEditError.fileChanged
     }
-    let rebuilt = "\(head)\(number) \(newDescription)"
+    let rebuilt = "\(head)\(number) \(singleLine(newDescription))"
     lines[idx] = hadCR ? rebuilt + "\r" : rebuilt
     return try writeAndParse(path, lines, fs: fs)
 }
@@ -202,6 +208,19 @@ public func moveTask(_ path: String, identity: String, fromSection fromPrefix: S
         throw TaskEditError.fileChanged
     }
     var lines = doc.lines
+
+    // Removing the source first shifts the destination slots. For a same-section
+    // move where the source sits before the target index, the destination slots
+    // collapse left by one, so the effective insertion index is toIndex-1.
+    // Upward and cross-section moves are unaffected.
+    var effectiveIndex = toIndex
+    if fromPrefix == toPrefix,
+       let srcSection = doc.sections.first(where: { $0.prefix == fromPrefix }),
+       let srcPos = srcSection.taskLineIdxs.firstIndex(of: srcIdx),
+       srcPos < toIndex {
+        effectiveIndex = toIndex - 1
+    }
+
     let moved = lines.remove(at: srcIdx)
 
     // Re-parse after removal to get the destination section's current slots.
@@ -216,10 +235,10 @@ public func moveTask(_ path: String, identity: String, fromSection fromPrefix: S
         // Empty destination section: insert right after its heading line.
         // Find the heading by scanning for the section in the re-parsed doc.
         insertAt = headingLineIndex(mid, prefix: toPrefix).map { $0 + 1 } ?? lines.count
-    } else if toIndex >= slots.count {
+    } else if effectiveIndex >= slots.count {
         insertAt = slots[slots.count - 1] + 1
     } else {
-        insertAt = slots[max(0, toIndex)]
+        insertAt = slots[max(0, effectiveIndex)]
     }
     lines.insert(moved, at: insertAt)
 
