@@ -43,7 +43,7 @@ When pressing `Space` on a task item, the system SHALL:
 3. Modify only that line on disk, changing `[ ]` to `[x]` or vice versa, preserving the file's existing line endings
 4. Update the render without reloading the entire file
 
-If no task with the matching text is found in the fresh parse, the system SHALL make no change to the file.
+If no task with the matching text is found in the fresh parse, the system SHALL make no change to the file. Task texts are expected to be unique; if the cursor's text matches more than one task in the fresh parse, the system SHALL make no change and surface a temporary error rather than toggling the first match.
 
 #### Scenario: Mark task as completed
 - **WHEN** the cursor is on `- [ ] Create structure` and the user presses `Space`
@@ -60,6 +60,10 @@ If no task with the matching text is found in the fresh parse, the system SHALL 
 #### Scenario: Matching task no longer present
 - **WHEN** the cursor task's text no longer exists in `tasks.md` at the moment of toggling
 - **THEN** no write occurs and the file is left unchanged
+
+#### Scenario: Ambiguous match makes no change
+- **WHEN** the cursor's text matches more than one task in the fresh parse
+- **THEN** no write occurs and the TUI shows a temporary error prompting disambiguation
 
 #### Scenario: Write error
 - **WHEN** `tasks.md` does not have write permissions and the user presses `Space`
