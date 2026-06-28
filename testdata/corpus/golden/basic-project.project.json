@@ -84,10 +84,15 @@
           "content": "## ADDED Requirements\n\n### Requirement: Listing\nThe catalog SHALL list products.\n\n#### Scenario: Products exist\n- **WHEN** products exist\n- **THEN** they are listed\n",
           "name": "catalog",
           "read_error": false
+        },
+        {
+          "content": "⚠ no spec.md in empty-delta",
+          "name": "empty-delta",
+          "read_error": true
         }
       ],
       "specs": {
-        "content": "# auth\n\n## ADDED Requirements\n\n### Requirement: Login\nUsers SHALL log in.\n\n#### Scenario: Valid credentials\n- **WHEN** correct credentials are supplied\n- **THEN** the user is authenticated\n\n### Requirement: Logout\nUsers SHALL log out.\n\n#### Scenario: Active session\n- **WHEN** a logged-in user logs out\n- **THEN** the session ends\n\n\n---\n\n# billing\n\n## ADDED Requirements\n\n### Requirement: Invoice\nThe system SHALL issue invoices.\n\n#### Scenario: Order placed\n- **WHEN** an order is placed\n- **THEN** an invoice is generated\n\n\n---\n\n# catalog\n\n## ADDED Requirements\n\n### Requirement: Listing\nThe catalog SHALL list products.\n\n#### Scenario: Products exist\n- **WHEN** products exist\n- **THEN** they are listed\n",
+        "content": "# auth\n\n## ADDED Requirements\n\n### Requirement: Login\nUsers SHALL log in.\n\n#### Scenario: Valid credentials\n- **WHEN** correct credentials are supplied\n- **THEN** the user is authenticated\n\n### Requirement: Logout\nUsers SHALL log out.\n\n#### Scenario: Active session\n- **WHEN** a logged-in user logs out\n- **THEN** the session ends\n\n\n---\n\n# billing\n\n## ADDED Requirements\n\n### Requirement: Invoice\nThe system SHALL issue invoices.\n\n#### Scenario: Order placed\n- **WHEN** an order is placed\n- **THEN** an invoice is generated\n\n\n---\n\n# catalog\n\n## ADDED Requirements\n\n### Requirement: Listing\nThe catalog SHALL list products.\n\n#### Scenario: Products exist\n- **WHEN** products exist\n- **THEN** they are listed\n\n\n---\n\n# empty-delta\n\n⚠ no spec.md in empty-delta",
         "present": true,
         "read_error": false
       },

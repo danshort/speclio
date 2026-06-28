@@ -104,6 +104,10 @@ func normContent(content string, readErr error, root string) string {
 	if readErr == nil {
 		return content
 	}
+	// A missing-spec.md placeholder is "<prefix><dir>" with no error tail.
+	if rest, ok := strings.CutPrefix(content, missingSpecPrefix); ok {
+		return missingSpecPrefix + relPath(rest, root)
+	}
 	rest := strings.TrimPrefix(content, unreadablePrefix)
 	if i := strings.Index(rest, ": "); i >= 0 {
 		rest = rest[:i]

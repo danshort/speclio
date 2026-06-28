@@ -19,9 +19,9 @@
     ]
   },
   {
-    "content": "",
+    "content": "⚠ no spec.md in empty-capability",
     "name": "empty-capability",
-    "read_error": false,
+    "read_error": true,
     "requirement_count": 0,
     "requirement_names": []
   }
