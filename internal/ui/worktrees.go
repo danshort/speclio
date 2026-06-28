@@ -222,10 +222,17 @@ func (m *Model) pollWorktrees() tea.Cmd {
 	if !m.worktrees.Available {
 		return nil
 	}
+	if m.worktreeFresh == nil {
+		m.worktreeFresh = newFreshness()
+	}
 	changed := false
 	for wi := range m.worktrees.Entries {
 		e := &m.worktrees.Entries[wi]
 		for ci := range e.changes {
+			// Skip the read+parse when this sibling change's tasks.md is unchanged (#90).
+			if !m.taskChanged(m.worktreeFresh, e.changes[ci]) {
+				continue
+			}
 			fresh := m.loader.ReloadChange(e.changes[ci])
 			if fresh.Tasks.Present != e.changes[ci].Tasks.Present || fresh.Tasks.Content != e.changes[ci].Tasks.Content {
 				e.changes[ci].Tasks = fresh.Tasks

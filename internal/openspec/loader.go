@@ -284,6 +284,26 @@ func (l *Loader) ReloadChange(ch Change) Change {
 	return ch
 }
 
+// FileSig is a cheap change-detection signature for a file: present-ness plus
+// modification time (UnixNano) and size. A not-found stat yields the zero value
+// (Present=false). It is comparable with ==, so callers can gate expensive
+// re-reads on whether the signature changed.
+type FileSig struct {
+	Present     bool
+	ModUnixNano int64
+	Size        int64
+}
+
+// Signature returns a FileSig for path via a single stat — no file read. A stat
+// error (e.g. the file does not exist) yields the zero value.
+func (l *Loader) Signature(path string) FileSig {
+	info, err := l.fs.Stat(path)
+	if err != nil {
+		return FileSig{}
+	}
+	return FileSig{Present: true, ModUnixNano: info.ModTime().UnixNano(), Size: info.Size()}
+}
+
 // ── Helpers ────────────────────────────────────────────────────────────────────
 
 func (l *Loader) loadChangeFromDir(dir, name, displayDate string) Change {

@@ -64,9 +64,16 @@ func (m *Model) pollIndexMode() tea.Cmd {
 	if sameNames(m.project.Changes, diskChanges) &&
 		sameStrings(archiveNames, diskArchives) &&
 		sameStrings(specNames, diskSpecs) {
+		if m.fresh == nil {
+			m.fresh = newFreshness()
+		}
 		needsRefresh := false
 		for i := range m.project.Changes {
 			ch := &m.project.Changes[i]
+			// Skip the read+parse when tasks.md is unchanged (#90).
+			if !m.taskChanged(m.fresh, *ch) {
+				continue
+			}
 			fresh := m.loader.ReloadChange(*ch)
 			if fresh.Tasks.Present != ch.Tasks.Present || fresh.Tasks.Content != ch.Tasks.Content {
 				ch.Tasks = fresh.Tasks

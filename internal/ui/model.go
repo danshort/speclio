@@ -187,6 +187,12 @@ type Model struct {
 	// read-only via the ModeViewingArchive path; viewingWorktreeChange gates it.
 	worktreeViewChange    openspec.Change
 	viewingWorktreeChange bool
+
+	// Per-mode freshness caches: skip the periodic ReloadChange for a change
+	// whose tasks.md signature is unchanged (#90). Index and worktrees keep
+	// separate caches because they hold independent in-memory copies.
+	fresh         *freshness
+	worktreeFresh *freshness
 }
 
 func New(project *openspec.Project, cfg openspec.ProjectConfig, root string, loader *openspec.Loader, editorOpenWith, startupWarn string) Model {
@@ -199,6 +205,8 @@ func New(project *openspec.Project, cfg openspec.ProjectConfig, root string, loa
 		theme:          Theme{},
 		editorOpenWith: editorOpenWith,
 		errMsg:         startupWarn, // e.g. a rejected user config — visible in the status line
+		fresh:          newFreshness(),
+		worktreeFresh:  newFreshness(),
 	}
 	if len(project.Changes) > 0 {
 		m.viewer.tab = m.defaultTab()
