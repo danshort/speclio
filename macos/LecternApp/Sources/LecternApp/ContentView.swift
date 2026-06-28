@@ -372,6 +372,12 @@ struct TasksView: View {
                 }
             }
         }
+        // Clicking empty space (where no row intercepts) saves the open edit.
+        .background(
+            Color.clear
+                .contentShape(Rectangle())
+                .onTapGesture { commitActiveEdit() }
+        )
         .onAppear { items = parseTasks(content) }
         .onChange(of: content) { newContent in
             // External reload (incl. FSEvents): re-parse and drop any stale
@@ -421,6 +427,7 @@ struct TasksView: View {
     }
 
     private func toggle(_ item: TaskItem) {
+        commitActiveEdit()   // toggling another task saves the open edit
         do {
             items = try toggleTaskByText(tasksPath, item.text)
             errorText = nil; notice = nil
@@ -485,7 +492,10 @@ struct TasksView: View {
                     .foregroundStyle(item.done ? .secondary : .primary)
                     .contentShape(Rectangle())
                     .onTapGesture(count: 2) { beginEdit(item) }
-                    .onTapGesture { selectedID = selectedID == rowID ? nil : rowID }
+                    .onTapGesture {
+                        commitActiveEdit()   // tapping another row saves the open edit
+                        selectedID = selectedID == rowID ? nil : rowID
+                    }
             }
 
             Spacer(minLength: 8)
@@ -580,9 +590,18 @@ struct TasksView: View {
     }
 
     private func beginEdit(_ item: TaskItem) {
+        if let eid = editingID, eid != id(item) { commitActiveEdit() }  // switching rows saves
         editingID = id(item)
         editingText = item.taskDescription
         selectedID = id(item)
+    }
+
+    // Commit whatever row is currently being edited (used by "click away"
+    // gestures, since a macOS TextField doesn't resign focus on outside clicks).
+    private func commitActiveEdit() {
+        guard let eid = editingID,
+              let item = items.first(where: { $0.kind == .task && id($0) == eid }) else { return }
+        commitEdit(item)
     }
 
     private func commitEdit(_ item: TaskItem) {
