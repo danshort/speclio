@@ -6,18 +6,63 @@ private let rxSection = Rx("^## (.+)$")
 private let rxPending = Rx("^- \\[ \\] (.+)$")
 private let rxDone = Rx("^- \\[x\\] (.+)$")
 
+// Section prefix: the token before the first ". " in a heading, e.g. "1" from
+// "1. Setup" or "3b" from "3b. Foo". Digits then optional letters.
+private let rxSectionPrefix = Rx("^([0-9]+[A-Za-z]*)\\.")
+// Task number at the start of a (de-struck) description: <prefix>.<ordinal>.
+private let rxTaskNumber = Rx("^([0-9]+[A-Za-z]*)\\.([0-9]+)\\s+(.*)$")
+
+/// sectionPrefix extracts the verbatim prefix from a section heading's captured
+/// text (e.g. "1. Setup" -> "1", "3b. Foo" -> "3b"). Empty if not numbered.
+func sectionPrefix(fromHeading heading: String) -> String {
+    rxSectionPrefix.firstCapture(heading) ?? ""
+}
+
+/// taskIdentity is the stable key for safe writes: the description with any
+/// wrapping `~~…~~` strikethrough markers removed and the leading
+/// `<prefix>.<ordinal>` number stripped. Renumbering changes the number but not
+/// the identity, so re-read-before-write still finds the right line.
+public func taskIdentity(_ taskText: String) -> String {
+    let unstruck = taskText.replacingOccurrences(of: "~~", with: "")
+    if let m = rxTaskNumber.firstCapture(unstruck, 3) {
+        return trimSpace(m)
+    }
+    return trimSpace(unstruck)
+}
+
+/// taskNumber parses the `<prefix>.<ordinal>` from a (possibly struck-through)
+/// task description. Returns nil when the task is unnumbered.
+func taskNumber(_ taskText: String) -> (prefix: String, ordinal: Int)? {
+    let unstruck = taskText.replacingOccurrences(of: "~~", with: "")
+    guard let p = rxTaskNumber.firstCapture(unstruck, 1),
+          let oStr = rxTaskNumber.firstCapture(unstruck, 2),
+          let o = Int(oStr) else { return nil }
+    return (p, o)
+}
+
 public func parseTasks(_ content: String) -> [TaskItem] {
     var items: [TaskItem] = []
+    var currentPrefix = ""
     for (i, line) in splitLines(content).enumerated() {
         if let m = rxSection.firstCapture(line) {
-            items.append(TaskItem(kind: .section, text: m, done: false, lineNum: i))
+            currentPrefix = sectionPrefix(fromHeading: m)
+            items.append(TaskItem(kind: .section, text: m, done: false, lineNum: i,
+                                  sectionPrefix: currentPrefix))
         } else if let m = rxPending.firstCapture(line) {
-            items.append(TaskItem(kind: .task, text: m, done: false, lineNum: i))
+            items.append(makeTask(text: m, done: false, lineNum: i, prefix: currentPrefix))
         } else if let m = rxDone.firstCapture(line) {
-            items.append(TaskItem(kind: .task, text: m, done: true, lineNum: i))
+            items.append(makeTask(text: m, done: true, lineNum: i, prefix: currentPrefix))
         }
     }
     return items
+}
+
+/// makeTask builds a task item, deriving its ordinal (from its own number) and
+/// stable identity. The task adopts the current section's prefix for membership.
+private func makeTask(text: String, done: Bool, lineNum: Int, prefix: String) -> TaskItem {
+    let ordinal = taskNumber(text)?.ordinal ?? 0
+    return TaskItem(kind: .task, text: text, done: done, lineNum: lineNum,
+                    sectionPrefix: prefix, ordinal: ordinal, taskDescription: taskIdentity(text))
 }
 
 /// findCursorByText mirrors Go: the first task with the given text, else the

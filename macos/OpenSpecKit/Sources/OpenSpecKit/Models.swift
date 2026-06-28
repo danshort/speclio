@@ -144,11 +144,32 @@ public struct TaskItem: Codable, Equatable {
     /// Index into the raw `\n`-split lines of the source file.
     public var lineNum: Int
 
-    public init(kind: ItemKind, text: String, done: Bool, lineNum: Int) {
+    // ── In-memory structured fields (macOS task editing) ──────────────────────
+    // NOT part of the cross-language serialization contract: kind/text/done/
+    // line_num are byte-compared against the Go-produced golden
+    // (testdata/corpus/golden/tasks.json), so the fields below are excluded from
+    // CodingKeys and carry defaults. They are derived from `text` by parseTasks
+    // and consumed only by the editing layer.
+
+    /// Section prefix carried verbatim from the owning `## <prefix>.` heading
+    /// (e.g. "1", "3b"). Empty for section items or unnumbered tasks.
+    public var sectionPrefix: String = ""
+    /// 1-based ordinal within the section (the `M` in `<prefix>.M`). 0 when the
+    /// task is unnumbered or for a section item.
+    public var ordinal: Int = 0
+    /// Description with the leading `<prefix>.<ordinal>` number and any wrapping
+    /// `~~…~~` removed — the stable identity used for safe writes.
+    public var taskDescription: String = ""
+
+    public init(kind: ItemKind, text: String, done: Bool, lineNum: Int,
+                sectionPrefix: String = "", ordinal: Int = 0, taskDescription: String = "") {
         self.kind = kind
         self.text = text
         self.done = done
         self.lineNum = lineNum
+        self.sectionPrefix = sectionPrefix
+        self.ordinal = ordinal
+        self.taskDescription = taskDescription
     }
 
     enum CodingKeys: String, CodingKey {
