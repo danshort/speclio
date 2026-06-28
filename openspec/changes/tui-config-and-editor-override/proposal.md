@@ -11,7 +11,8 @@
   - any other value → treated as a **terminal** editor command (e.g. `"nvim"`, `"code --wait"`) run via `tea.ExecProcess`.
 - The launch mode (terminal vs detached) is **implied by the value** — no separate flag.
 - Harden the launch: verify the resolved opener exists before launching; surface launch/exit errors instead of swallowing them (`internal/ui/viewer.go:170` currently always returns `editorReturnMsg{}` and ignores the error).
-- Keep the `e` keybinding.
+- Keep the `e` keybinding, and add a `c` keybinding (index + change-viewer) that opens the config file in the editor, creating a documented starter file if none exists.
+- Surface a rejected (malformed) config in the TUI status line, not just stderr — the alt-screen hides stderr during a session, so a swallowed warning would otherwise read as a silent fallback.
 
 ## Capabilities
 
