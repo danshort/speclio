@@ -1,5 +1,26 @@
 # Changelog
 
+## [0.21.0](https://github.com/danshort/lectern/compare/v0.20.1...v0.21.0) (2026-06-28)
+
+
+### Features
+
+* add in-app task editing to the macOS app ([#107](https://github.com/danshort/lectern/issues/107)) ([250364a](https://github.com/danshort/lectern/commit/250364a5bdd71fa7c4d7c620976a8341782db21c))
+* configurable editor override + user config file for the TUI ([#112](https://github.com/danshort/lectern/issues/112)) ([506ca94](https://github.com/danshort/lectern/commit/506ca944d675557ab85d3b1376f99490c7ac5c92))
+* drive macOS worktree progress via FSEvents instead of a 1.5s timer ([#119](https://github.com/danshort/lectern/issues/119)) ([638d146](https://github.com/danshort/lectern/commit/638d146fda8be98a6130aa4a3c4ec10a61d74c79))
+* gate TUI periodic reloads on a file signature ([#113](https://github.com/danshort/lectern/issues/113)) ([383c00f](https://github.com/danshort/lectern/commit/383c00ffc28270f828f508459e925a950237487c))
+* macOS editor override (pick an app) + ⌘E to open ([#120](https://github.com/danshort/lectern/issues/120)) ([0f55457](https://github.com/danshort/lectern/commit/0f554572d6cef040740260ae30f4769efa298abe))
+* surface a spec dir with no spec.md instead of silently skipping it ([#123](https://github.com/danshort/lectern/issues/123)) ([86578f0](https://github.com/danshort/lectern/commit/86578f03657405b5d45f952b3724daba62d5ef15))
+* undo/redo for macOS task mutations via file snapshots ([#121](https://github.com/danshort/lectern/issues/121)) ([c68d71d](https://github.com/danshort/lectern/commit/c68d71d1eca05bd55dc35ad303db3d8064a5372d))
+
+
+### Bug Fixes
+
+* code-review follow-up bugs (reorder, zombie launch, Esc-save, newline) ([#116](https://github.com/danshort/lectern/issues/116)) ([ab05d44](https://github.com/danshort/lectern/commit/ab05d448b032edede3cbe2d1d48beed13157b06e))
+* guard duplicate task identity + unique add placeholder + stable list id ([#117](https://github.com/danshort/lectern/issues/117)) ([4e8e727](https://github.com/danshort/lectern/commit/4e8e727299b988bc77359998c4c4d6628b2a913f))
+* surface a not-found macOS task toggle instead of a silent no-op ([#118](https://github.com/danshort/lectern/issues/118)) ([c3de54d](https://github.com/danshort/lectern/commit/c3de54d338675a5e1e394b5749b1f68add08ffcd))
+* toggle the correct task and surface reload errors in the TUI ([#109](https://github.com/danshort/lectern/issues/109)) ([dcf7272](https://github.com/danshort/lectern/commit/dcf7272da0ef43c36d8f81cf67d406e12be0c933))
+
 ## [0.20.1](https://github.com/danshort/lectern/compare/v0.20.0...v0.20.1) (2026-06-27)
 
 
