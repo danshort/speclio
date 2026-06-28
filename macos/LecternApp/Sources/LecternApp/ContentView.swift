@@ -40,7 +40,7 @@ struct ContentView: View {
             ToolbarItem {
                 Menu {
                     Button("Reveal in Finder") { revealInFinder() }
-                    Button("Open in Default App") { openInEditor() }
+                    Button("Open in Editor") { model.openCurrentArtifactExternally() }
                 } label: {
                     Label("File actions", systemImage: "ellipsis.circle")
                 }
@@ -56,11 +56,6 @@ struct ContentView: View {
     private func revealInFinder() {
         guard let path = model.currentFilePath() else { return }
         NSWorkspace.shared.activateFileViewerSelecting([URL(fileURLWithPath: path)])
-    }
-
-    private func openInEditor() {
-        guard let path = model.currentFilePath() else { return }
-        NSWorkspace.shared.open(URL(fileURLWithPath: path))
     }
 }
 

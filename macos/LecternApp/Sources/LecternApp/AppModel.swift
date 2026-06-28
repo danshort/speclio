@@ -503,6 +503,21 @@ final class AppModel: ObservableObject {
 
     // The on-disk file (or directory) backing the current selection, for
     // reveal-in-Finder / open-in-editor.
+    // Opens the current artifact externally: in the configured editor app
+    // (Settings → Opening artifacts) when one is set and present, else the
+    // system default handler (#110). Shared by the toolbar action and ⌘E.
+    func openCurrentArtifactExternally() {
+        guard let path = currentFilePath() else { return }
+        let fileURL = URL(fileURLWithPath: path)
+        let appPath = UserDefaults.standard.string(forKey: EditorPref.storageKey) ?? ""
+        if !appPath.isEmpty, FileManager.default.fileExists(atPath: appPath) {
+            NSWorkspace.shared.open([fileURL], withApplicationAt: URL(fileURLWithPath: appPath),
+                                    configuration: NSWorkspace.OpenConfiguration())
+        } else {
+            NSWorkspace.shared.open(fileURL)
+        }
+    }
+
     func currentFilePath() -> String? {
         func join(_ parts: String...) -> String {
             parts.dropFirst().reduce(parts.first ?? "") { ($0 as NSString).appendingPathComponent($1) }

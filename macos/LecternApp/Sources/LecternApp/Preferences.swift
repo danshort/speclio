@@ -1,4 +1,6 @@
 import SwiftUI
+import AppKit
+import UniformTypeIdentifiers
 
 // Preferences shared across the app. `contentFontScale` is a user multiplier
 // applied on top of Dynamic Type, to the rendered content only (#63). One
@@ -16,13 +18,44 @@ enum ContentFont {
     }
 }
 
+// The application used to open artifacts externally (⌘E / "Open in Editor").
+// Stores the chosen app's path; "" means use the system default app (#110).
+enum EditorPref {
+    static let storageKey = "editorAppPath"
+}
+
 // The Settings (⌘,) "General" pane. One pane for now; wrap in a TabView when a
 // second category of preferences exists.
 struct GeneralSettingsView: View {
     @AppStorage(ContentFont.storageKey) private var scale = ContentFont.defaultScale
+    @AppStorage(EditorPref.storageKey) private var editorAppPath = ""
+
+    private var editorChoiceLabel: String {
+        guard !editorAppPath.isEmpty else { return "System default" }
+        let name = FileManager.default.displayName(atPath: editorAppPath)
+        return name.isEmpty ? (editorAppPath as NSString).lastPathComponent : name
+    }
 
     var body: some View {
         Form {
+            Section("Opening artifacts") {
+                VStack(alignment: .leading, spacing: 8) {
+                    HStack {
+                        Text("Open with")
+                        Spacer()
+                        Text(editorChoiceLabel).foregroundStyle(.secondary)
+                    }
+                    HStack(spacing: 12) {
+                        Button("Choose App…") { chooseEditorApp() }
+                        Button("Use Default") { editorAppPath = "" }
+                            .disabled(editorAppPath.isEmpty)
+                    }
+                    Text("Which app `⌘E` / “Open in Editor” uses. Defaults to the system handler for the file.")
+                        .font(.caption).foregroundStyle(.secondary)
+                }
+                .padding(.vertical, 4)
+            }
+
             Section("Content") {
                 VStack(alignment: .leading, spacing: 8) {
                     Text("Text size")
@@ -47,5 +80,17 @@ struct GeneralSettingsView: View {
         .formStyle(.grouped)
         .frame(width: 440)
         .onAppear { scale = ContentFont.clamp(scale) } // self-heal an out-of-range stored value
+    }
+
+    private func chooseEditorApp() {
+        let panel = NSOpenPanel()
+        panel.allowedContentTypes = [.application]
+        panel.canChooseDirectories = false
+        panel.allowsMultipleSelection = false
+        panel.directoryURL = URL(fileURLWithPath: "/Applications")
+        panel.prompt = "Choose"
+        if panel.runModal() == .OK, let url = panel.url {
+            editorAppPath = url.path
+        }
     }
 }

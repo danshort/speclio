@@ -142,6 +142,14 @@ struct ProjectCommands: Commands {
             }
             .disabled(recents.paths.isEmpty)
         }
+        // Open the current artifact externally (configured editor app, else
+        // system default) — shares AppModel.openCurrentArtifactExternally with
+        // the toolbar flyout (#110).
+        CommandGroup(after: .newItem) {
+            Button("Open in Editor") { model?.openCurrentArtifactExternally() }
+                .keyboardShortcut("e", modifiers: .command)
+                .disabled(model?.currentFilePath() == nil)
+        }
     }
 
     private func openProject() {
