@@ -189,7 +189,7 @@ type Model struct {
 	viewingWorktreeChange bool
 }
 
-func New(project *openspec.Project, cfg openspec.ProjectConfig, root string, loader *openspec.Loader, editorOpenWith string) Model {
+func New(project *openspec.Project, cfg openspec.ProjectConfig, root string, loader *openspec.Loader, editorOpenWith, startupWarn string) Model {
 	m := Model{
 		root:           root,
 		loader:         loader,
@@ -198,6 +198,7 @@ func New(project *openspec.Project, cfg openspec.ProjectConfig, root string, loa
 		projectConfig:  cfg,
 		theme:          Theme{},
 		editorOpenWith: editorOpenWith,
+		errMsg:         startupWarn, // e.g. a rejected user config — visible in the status line
 	}
 	if len(project.Changes) > 0 {
 		m.viewer.tab = m.defaultTab()
@@ -221,8 +222,8 @@ func New(project *openspec.Project, cfg openspec.ProjectConfig, root string, loa
 	return m
 }
 
-func NewSinglePath(project *openspec.Project, cfg openspec.ProjectConfig, root string, loader *openspec.Loader, editorOpenWith string) Model {
-	m := New(project, cfg, root, loader, editorOpenWith)
+func NewSinglePath(project *openspec.Project, cfg openspec.ProjectConfig, root string, loader *openspec.Loader, editorOpenWith, startupWarn string) Model {
+	m := New(project, cfg, root, loader, editorOpenWith, startupWarn)
 	m.singlePath = true
 	return m
 }

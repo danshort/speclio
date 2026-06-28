@@ -17,13 +17,14 @@
 - [x] 3.3 Surface launch failures (opener not found / exec error) via `m.errMsg` instead of always returning `editorReturnMsg{}` (`viewer.go:170`)
 - [x] 3.4 Apply the same resolution to the spec-view editor open path (`ModeViewingSpec`)
 - [x] 3.5 Add a `c` keybinding (index + change-viewer) that opens the user config in the editor, creating a documented starter file if missing (`config.EnsureFile`); advertise it in the help overlay; test `EnsureFile`
+- [x] 3.6 Surface a rejected user config in the TUI status line (thread the load error into the model), since the alt-screen hides the stderr warning during a session
 
 ## 4. Verification
 
 - [x] 4.1 `make test` / `go test -race ./...` passes (config loader, resolver, and existing editor-launch tests still green)
 - [x] 4.2 `go vet ./...` clean; `gofmt` clean; `make lint` if available
-- [ ] 4.3 Manual: no config → `e` still opens `$EDITOR` (terminal) as before
-- [ ] 4.4 Manual: `open_with = "system"` → `e` opens the artifact in the default GUI app without freezing the TUI; saving reflects on the next reload
-- [ ] 4.5 Manual: `open_with = "nvim"` → `e` opens nvim in-terminal and resumes on exit
-- [ ] 4.6 Manual: malformed `config.toml` → warning on stderr, TUI still launches with defaults
+- [x] 4.3 Manual: no config → `e` still opens `$EDITOR` (terminal) as before
+- [x] 4.4 Manual: `open_with = "system"` → `e` opens the artifact in the default GUI app without freezing the TUI; saving reflects on the next reload
+- [x] 4.5 Manual: `open_with = "nvim"` → `e` opens nvim in-terminal and resumes on exit
+- [x] 4.6 Manual: malformed `config.toml` → warning on stderr, TUI still launches with defaults
 - [x] 4.7 Update README/DEVELOPING with the config file location and the `[editor] open_with` setting

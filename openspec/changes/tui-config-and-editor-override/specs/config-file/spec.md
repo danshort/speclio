@@ -19,11 +19,15 @@ When the configuration file does not exist, the TUI SHALL use built-in defaults 
 - **THEN** the TUI starts normally with all settings at their defaults
 
 ### Requirement: Malformed config warns and falls back to defaults
-When the configuration file exists but cannot be parsed as TOML, the TUI SHALL print a warning to stderr identifying the problem and SHALL continue with built-in defaults rather than exiting.
+When the configuration file exists but cannot be parsed as TOML, the TUI SHALL surface a warning identifying the problem and SHALL continue with built-in defaults rather than exiting. Because the TUI's alternate screen hides stderr during a session, the warning SHALL be shown in the in-app status line (in addition to stderr).
 
 #### Scenario: Syntax error does not block launch
 - **WHEN** `config.toml` contains invalid TOML
-- **THEN** a warning is printed to stderr and the TUI launches with default settings
+- **THEN** the TUI launches with default settings and shows a warning in the status line (and on stderr)
+
+#### Scenario: Smart-quoted value is reported, not silently ignored
+- **WHEN** `config.toml` contains a value typed with curly quotes (e.g. `open_with = “system"`), which is invalid TOML
+- **THEN** the TUI does not silently fall back; it shows the parse warning in the status line so the user can see the config was rejected
 
 ### Requirement: Unknown keys are ignored
 The configuration loader SHALL ignore keys it does not recognize, so that forward-compatible additions and minor typos degrade gracefully instead of failing.
