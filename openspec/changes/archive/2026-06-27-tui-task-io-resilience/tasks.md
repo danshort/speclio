@@ -14,5 +14,5 @@
 
 - [x] 3.1 `make test` (or `go test -race ./...`) passes, including the new toggle tests
 - [x] 3.2 `go vet ./...` clean; `make lint` if available
-- [ ] 3.3 Manual: with the TUI open on a change, externally insert lines above a task, then toggle it — confirm the intended checkbox flips
+- [x] 3.3 Manual: with the TUI open on a change, externally insert lines above a task, then toggle it — confirm the intended checkbox flips
 - [ ] 3.4 Manual: induce a reload error (e.g. make a change dir unreadable) and confirm the status line shows it rather than the index silently freezing
