@@ -323,6 +323,8 @@ struct TasksView: View {
     @State private var editingID: String?          // identity of the task being inline-edited
     @State private var editingText: String = ""
     @State private var pendingDelete: TaskItem?    // task awaiting delete confirmation
+    @State private var hoveredID: String?          // row under the pointer (reveals affordances)
+    @State private var dropTargetID: String?       // row a drag is currently over (insertion line)
 
     private var tasksPath: String { (changePath as NSString).appendingPathComponent("tasks.md") }
 
@@ -427,9 +429,25 @@ struct TasksView: View {
 
     @ViewBuilder
     private func editableTaskRow(_ item: TaskItem) -> some View {
-        let selected = selectedID == id(item)
-        HStack(alignment: .firstTextBaseline, spacing: 8) {
-            // Checkbox toggles; the rest of the row selects / edits.
+        let rowID = id(item)
+        let hovered = hoveredID == rowID
+        let editing = editingID == rowID
+        // Affordances appear on hover (mouse) or selection (click/keyboard).
+        let showControls = (hovered || selectedID == rowID) && !editing
+        HStack(alignment: .firstTextBaseline, spacing: 6) {
+            // Drag handle — the ONLY draggable element, so clicks on the row's
+            // buttons aren't swallowed by the drag gesture. Reserved width keeps
+            // the layout stable; it just fades in on hover to signal draggability.
+            Image(systemName: "line.3.horizontal")
+                .foregroundStyle(.tertiary)
+                .font(.caption)
+                .frame(width: 14)
+                .opacity(hovered ? 1 : 0)
+                .draggable(rowID)
+                .help("Drag to reorder or move to another section")
+                .accessibilityLabel("Reorder handle for \(item.taskDescription)")
+
+            // Checkbox toggles.
             Button { toggle(item) } label: {
                 Image(systemName: item.done ? "checkmark.square.fill" : "square")
                     .foregroundStyle(item.done ? Color.accentColor : .secondary)
@@ -438,7 +456,7 @@ struct TasksView: View {
             .accessibilityLabel(item.done ? "Completed" : "Not completed")
             .accessibilityHint("Toggles this task")
 
-            if editingID == id(item) {
+            if editing {
                 TextField("Task", text: $editingText, onCommit: { commitEdit(item) })
                     .textFieldStyle(.roundedBorder)
                     .onExitCommand { editingID = nil }   // Esc cancels
@@ -448,33 +466,56 @@ struct TasksView: View {
                     .foregroundStyle(item.done ? .secondary : .primary)
                     .contentShape(Rectangle())
                     .onTapGesture(count: 2) { beginEdit(item) }
-                    .onTapGesture { selectedID = selected ? nil : id(item) }
+                    .onTapGesture { selectedID = selectedID == rowID ? nil : rowID }
             }
 
             Spacer(minLength: 8)
 
-            if selected && editingID == nil {
-                Button { performAdd(after: item) } label: { Image(systemName: "plus") }
-                    .buttonStyle(.plain).foregroundStyle(.secondary)
-                    .help("Add a task after this one")
-                    .accessibilityLabel("Add task after \(item.taskDescription)")
-                Button { pendingDelete = item } label: { Image(systemName: "minus") }
-                    .buttonStyle(.plain).foregroundStyle(.secondary)
-                    .help("Delete this task")
-                    .accessibilityLabel("Delete \(item.taskDescription)")
+            if showControls {
+                rowControl("pencil", "Edit this task", "Edit \(item.taskDescription)") { beginEdit(item) }
+                rowControl("plus", "Add a task after this one", "Add task after \(item.taskDescription)") {
+                    performAdd(after: item)
+                }
+                rowControl("minus", "Delete this task", "Delete \(item.taskDescription)") {
+                    pendingDelete = item
+                }
             }
         }
         .padding(.vertical, 1)
-        .background(selected ? Color.accentColor.opacity(0.12) : .clear)
+        .background(selectedID == rowID ? Color.accentColor.opacity(0.12) : .clear)
+        // Insertion line: a drag currently hovering this row will drop above it.
+        .overlay(alignment: .top) {
+            Rectangle().fill(Color.accentColor).frame(height: 2)
+                .opacity(dropTargetID == rowID ? 1 : 0)
+        }
+        .onHover { inside in
+            if inside { hoveredID = rowID } else if hoveredID == rowID { hoveredID = nil }
+        }
         .accessibilityElement(children: .combine)
         .accessibilityValue(item.done ? "completed" : "not completed")
-        // Drag to reorder / move across sections.
-        .draggable(id(item))
         .dropDestination(for: String.self) { payload, _ in
+            dropTargetID = nil
             guard let dropped = payload.first else { return false }
             performMove(draggedID: dropped, onto: item)
             return true
+        } isTargeted: { targeted in
+            if targeted { dropTargetID = rowID } else if dropTargetID == rowID { dropTargetID = nil }
         }
+    }
+
+    // A small hover-revealed row affordance with a comfortable hit target.
+    private func rowControl(_ symbol: String, _ help: String, _ label: String,
+                            action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            Image(systemName: symbol)
+                .font(.caption)
+                .foregroundStyle(.secondary)
+                .frame(width: 22, height: 18)
+                .contentShape(Rectangle())   // full frame is clickable, not just the glyph
+        }
+        .buttonStyle(.borderless)
+        .help(help)
+        .accessibilityLabel(label)
     }
 
     private func beginEdit(_ item: TaskItem) {
