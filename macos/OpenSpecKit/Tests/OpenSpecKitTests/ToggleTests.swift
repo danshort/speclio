@@ -37,9 +37,13 @@ final class ToggleTests: XCTestCase {
         XCTAssertEqual(try read(path), "## New Section\n\n- [ ] 1.1 alpha\n- [x] 1.2 beta\n")
     }
 
-    func testToggleUnknownTaskNoChange() throws {
+    func testToggleUnknownTaskThrowsAndLeavesFileUnchanged() throws {
+        // #101: a vanished task is a conflict (so the UI can notify), not a
+        // silent no-op — but the file must still be left untouched.
         let path = try writeTemp("- [ ] 1.1 alpha\n")
-        try toggleTaskByText(path, "nonexistent")
+        XCTAssertThrowsError(try toggleTaskByText(path, "nonexistent")) { err in
+            XCTAssertEqual(err as? TaskEditError, .fileChanged)
+        }
         XCTAssertEqual(try read(path), "- [ ] 1.1 alpha\n")
     }
 }
