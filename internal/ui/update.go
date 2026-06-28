@@ -73,6 +73,11 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m, tea.Batch(nextTick, cmd)
 
 	case editorReturnMsg:
+		if msg.err != nil {
+			// Terminal editor failed to launch/run — surface it; nothing to reload.
+			m.errMsg = "editor: " + msg.err.Error()
+			return m, clearErrAfter()
+		}
 		if m.mode == ModeViewingSpec {
 			// A project spec was edited: reload specs from disk so the change
 			// shows immediately, staying in ModeViewingSpec. Clamp the cursor

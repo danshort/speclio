@@ -37,7 +37,10 @@ const (
 var tabLabels = [tabCount]string{"proposal", "design", "specs", "tasks"}
 
 type errClearMsg struct{}
-type editorReturnMsg struct{}
+
+// editorReturnMsg is posted when a terminal editor exits. err is non-nil when
+// the editor failed to launch or run, so the handler can surface it.
+type editorReturnMsg struct{ err error }
 
 // renderedMsg carries async glamour output back to the event loop.
 type renderedMsg struct {
@@ -160,6 +163,10 @@ type Model struct {
 	loading    bool
 	singlePath bool
 
+	// editorOpenWith is the resolved editor.open_with config value driving how
+	// `e` opens artifacts (see internal/config.ResolveOpener). Empty → $EDITOR/vi.
+	editorOpenWith string
+
 	width, height int
 
 	renderCache     map[Tab]string
@@ -182,14 +189,15 @@ type Model struct {
 	viewingWorktreeChange bool
 }
 
-func New(project *openspec.Project, cfg openspec.ProjectConfig, root string, loader *openspec.Loader) Model {
+func New(project *openspec.Project, cfg openspec.ProjectConfig, root string, loader *openspec.Loader, editorOpenWith string) Model {
 	m := Model{
-		root:          root,
-		loader:        loader,
-		project:       project,
-		renderCache:   make(map[Tab]string),
-		projectConfig: cfg,
-		theme:         Theme{},
+		root:           root,
+		loader:         loader,
+		project:        project,
+		renderCache:    make(map[Tab]string),
+		projectConfig:  cfg,
+		theme:          Theme{},
+		editorOpenWith: editorOpenWith,
 	}
 	if len(project.Changes) > 0 {
 		m.viewer.tab = m.defaultTab()
@@ -213,8 +221,8 @@ func New(project *openspec.Project, cfg openspec.ProjectConfig, root string, loa
 	return m
 }
 
-func NewSinglePath(project *openspec.Project, cfg openspec.ProjectConfig, root string, loader *openspec.Loader) Model {
-	m := New(project, cfg, root, loader)
+func NewSinglePath(project *openspec.Project, cfg openspec.ProjectConfig, root string, loader *openspec.Loader, editorOpenWith string) Model {
+	m := New(project, cfg, root, loader, editorOpenWith)
 	m.singlePath = true
 	return m
 }

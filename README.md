@@ -233,6 +233,30 @@ In requirement focus mode:
 
 ---
 
+## Configuration
+
+lectern reads an optional per-user config file at `$XDG_CONFIG_HOME/lectern/config.toml`
+(falling back to `~/.config/lectern/config.toml`). It is optional — a missing file uses
+defaults, and a malformed one prints a warning and falls back to defaults rather than
+failing to launch.
+
+Today it controls how `e` opens an artifact:
+
+```toml
+[editor]
+# How to open the active artifact with `e`:
+#   "$EDITOR"  (default) — your $EDITOR, falling back to vi, in the terminal
+#   "system"            — the OS default app for the file (open / xdg-open / start), detached
+#   "nvim", "code --wait", … — any editor command, run in the terminal
+open_with = "system"
+```
+
+With `open_with = "system"`, pressing `e` hands the file to your default Markdown app and
+lectern keeps running — your edit shows up on the next reload. The default stays `$EDITOR`,
+so terminal-only and SSH sessions are unaffected.
+
+---
+
 ## Project structure
 
 lectern expects an `openspec/` directory at the project root:

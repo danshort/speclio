@@ -1,11 +1,11 @@
 package ui
 
 import (
-	"os"
 	"os/exec"
-	"strings"
+	"time"
 
 	tea "charm.land/bubbletea/v2"
+	"github.com/danshort/lectern/internal/config"
 )
 
 func (m Model) updateViewer(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
@@ -151,22 +151,46 @@ func (m Model) moveSpec(delta int) (tea.Model, tea.Cmd) {
 	return m.commitStateChange()
 }
 
-// openInEditor launches the user's $EDITOR (falling back to vi) on path and
-// posts an editorReturnMsg when the editor exits. The TUI yields the terminal
-// via tea.ExecProcess and resumes on return. Shared by the change viewer and
-// the spec viewer.
+// openInEditor opens path using the resolved editor.open_with preference
+// (internal/config.ResolveOpener). A terminal opener ($EDITOR/vi or a custom
+// command) yields the terminal via tea.ExecProcess and posts an editorReturnMsg
+// on exit; the "system" handler is launched detached (the TUI keeps running and
+// the save is picked up by the normal reload). A missing or unlaunchable opener
+// sets m.errMsg instead of failing silently. Shared by the change and spec
+// viewers.
 func (m *Model) openInEditor(path string) tea.Cmd {
-	// Split EDITOR so values like "code --wait" or "emacs -nw" work.
-	fields := strings.Fields(os.Getenv("EDITOR"))
-	if len(fields) == 0 {
-		fields = []string{"vi"}
+	op := config.ResolveOpener(m.editorOpenWith)
+
+	// Verify the opener exists before launching, so a bad config/$EDITOR can't
+	// blank the screen (terminal mode) or silently no-op (detached mode).
+	if _, err := exec.LookPath(op.Name); err != nil {
+		m.errMsg = "editor not found: " + op.Name
+		return clearErrAfter()
 	}
-	args := append(fields[1:], path)
-	// #nosec G204 G702 -- by design: opens the user's own $EDITOR on a file
-	// in their own project. No shell is invoked (exec.Command does not
-	// interpret shell metacharacters), so this is not command injection.
-	cmd := exec.Command(fields[0], args...)
+
+	args := append(append([]string{}, op.Args...), path)
+	// #nosec G204 -- opens the user's own editor/handler on a file in their own
+	// project. No shell is invoked (exec.Command does not interpret shell
+	// metacharacters), so this is not command injection.
+	cmd := exec.Command(op.Name, args...)
+
+	if op.Mode == config.OpenDetached {
+		// Fire-and-forget: launch the GUI handler, don't yield the terminal.
+		if err := cmd.Start(); err != nil {
+			m.errMsg = "could not open: " + err.Error()
+			return clearErrAfter()
+		}
+		return nil
+	}
+
+	// Terminal editor: yield the terminal and resume on exit.
 	return tea.ExecProcess(cmd, func(err error) tea.Msg {
-		return editorReturnMsg{}
+		return editorReturnMsg{err: err}
 	})
+}
+
+// clearErrAfter clears the transient error message after a short delay,
+// matching the tasks-toggle error pattern.
+func clearErrAfter() tea.Cmd {
+	return tea.Tick(3*time.Second, func(time.Time) tea.Msg { return errClearMsg{} })
 }
