@@ -311,6 +311,8 @@ struct TasksView: View {
     let content: String   // from the model; changes when the file is reloaded (incl. external edits)
     var readOnly: Bool = false   // worktree changes render checkboxes + progress but don't toggle
 
+    @EnvironmentObject private var model: AppModel
+    @Environment(\.undoManager) private var undoManager   // the window's manager; nil in read-only/preview
     @State private var items: [TaskItem] = []
     @State private var errorText: String?
     @State private var notice: String?            // file-changed-on-disk notice (#97 conflict)
@@ -352,7 +354,9 @@ struct TasksView: View {
                 Label(errorText, systemImage: "exclamationmark.triangle.fill")
                     .foregroundStyle(.orange).font(.callout)
             }
-            if let notice {
+            // The view's own conflict notice, or an undo-time conflict surfaced
+            // by the model's snapshot engine (#103).
+            if let notice = notice ?? model.taskMutationNotice {
                 Label(notice, systemImage: "arrow.clockwise")
                     .foregroundStyle(.secondary).font(.callout)
             }
@@ -444,7 +448,13 @@ struct TasksView: View {
     private func toggle(_ item: TaskItem) {
         commitActiveEdit()   // toggling another task saves the open edit
         do {
-            items = try toggleTaskByText(tasksPath, item.text)
+            // Route through the model so the toggle is snapshotted for undo
+            // (⌘Z reverts it, #103); the returned items give the same immediate
+            // local update as before.
+            items = try model.mutateTasks(changePath: changePath, undoManager: undoManager,
+                                          actionName: "Toggle Task") { path in
+                try toggleTaskByText(path, item.text)
+            }
             errorText = nil; notice = nil
         } catch TaskEditError.fileChanged {
             // The task vanished since render — tell the user and re-sync (#101).
@@ -637,16 +647,16 @@ struct TasksView: View {
             .replacingOccurrences(of: "\n", with: " "))
         editingID = nil
         guard !newText.isEmpty, newText != item.taskDescription else { return }
-        run { try editTaskText(tasksPath, identity: item.taskDescription,
-                               inSection: item.sectionPrefix, newDescription: newText) }
+        run("Edit Task") { try editTaskText($0, identity: item.taskDescription,
+                                            inSection: item.sectionPrefix, newDescription: newText) }
     }
 
     private func performAdd(after item: TaskItem) {
         // A placeholder unique within the section, so repeated adds don't create
         // colliding identities (#115).
         let placeholder = uniquePlaceholder(inSection: item.sectionPrefix)
-        run { try addTask(tasksPath, afterIdentity: item.taskDescription,
-                          inSection: item.sectionPrefix, description: placeholder) }
+        run("Add Task") { try addTask($0, afterIdentity: item.taskDescription,
+                                      inSection: item.sectionPrefix, description: placeholder) }
         // Select + edit the real freshly-added task (locate it in the reparsed
         // items; skipped if the add conflicted and refreshed from disk).
         if let added = items.first(where: {
@@ -669,7 +679,7 @@ struct TasksView: View {
     }
 
     private func performDelete(_ item: TaskItem) {
-        run { try deleteTask(tasksPath, identity: item.taskDescription, inSection: item.sectionPrefix) }
+        run("Delete Task") { try deleteTask($0, identity: item.taskDescription, inSection: item.sectionPrefix) }
         if selectedID == id(item) { selectedID = nil }
     }
 
@@ -678,8 +688,8 @@ struct TasksView: View {
         guard parts.count == 2 else { return }
         let fromPrefix = String(parts[0]), draggedDesc = String(parts[1])
         guard !(fromPrefix == target.sectionPrefix && draggedDesc == target.taskDescription) else { return }
-        run { try moveTask(tasksPath, identity: draggedDesc, fromSection: fromPrefix,
-                           toSection: target.sectionPrefix, toIndex: max(0, target.ordinal - 1)) }
+        run("Move Task") { try moveTask($0, identity: draggedDesc, fromSection: fromPrefix,
+                                        toSection: target.sectionPrefix, toIndex: max(0, target.ordinal - 1)) }
     }
 
     // Drop onto a section's end zone: append the dragged task to that section.
@@ -687,14 +697,18 @@ struct TasksView: View {
         let parts = draggedID.split(separator: "\u{1}", maxSplits: 1, omittingEmptySubsequences: false)
         guard parts.count == 2 else { return }
         let fromPrefix = String(parts[0]), draggedDesc = String(parts[1])
-        run { try moveTask(tasksPath, identity: draggedDesc, fromSection: fromPrefix,
-                           toSection: prefix, toIndex: Int.max) }
+        run("Move Task") { try moveTask($0, identity: draggedDesc, fromSection: fromPrefix,
+                                        toSection: prefix, toIndex: Int.max) }
     }
 
-    // Runs an edit op, mapping a conflict to a visible notice + disk refresh.
-    private func run(_ op: () throws -> [TaskItem]) {
+    // Runs an edit op through the model's snapshot engine (so it's undoable,
+    // #103), mapping a conflict to a visible notice + disk refresh. `actionName`
+    // names the Edit-menu Undo entry; the op receives the tasks.md path.
+    private func run(_ actionName: String, _ op: @escaping (_ path: String) throws -> [TaskItem]) {
         do {
-            items = try op(); errorText = nil; notice = nil
+            items = try model.mutateTasks(changePath: changePath, undoManager: undoManager,
+                                          actionName: actionName, op)
+            errorText = nil; notice = nil
         } catch TaskEditError.fileChanged {
             notice = "tasks.md changed on disk — refreshed."
             refreshFromDisk()

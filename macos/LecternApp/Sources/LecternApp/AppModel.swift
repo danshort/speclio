@@ -518,6 +518,62 @@ final class AppModel: ObservableObject {
         }
     }
 
+    // ── Undoable task mutations (#103) ────────────────────────────────────────
+    // Every task mutation (toggle / edit / add / delete / move) is wrapped here
+    // so it registers a byte-exact file snapshot with the window's undo manager:
+    // ⌘Z restores the pre-mutation tasks.md, ⌘⇧Z re-applies it. Restoring the
+    // whole file (rather than a hand-derived per-op inverse) reproduces numbers,
+    // ordering, and LF/CRLF endings exactly with one mechanism. The op closure
+    // performs the existing OpenSpecKit mutation; if it throws (a conflict), no
+    // undo is registered and the error propagates to the view's notice UX.
+
+    // Carries an undo-time conflict message to the Tasks view (forward-path
+    // notices stay view-local).
+    @Published var taskMutationNotice: String?
+
+    @discardableResult
+    func mutateTasks(changePath: String, undoManager: UndoManager?, actionName: String,
+                     _ op: (_ tasksPath: String) throws -> [TaskItem]) rethrows -> [TaskItem] {
+        taskMutationNotice = nil   // a fresh mutation clears any stale undo-conflict notice
+        let path = (changePath as NSString).appendingPathComponent("tasks.md")
+        let before = try? Data(contentsOf: URL(fileURLWithPath: path))
+        let items = try op(path)
+        let after = try? Data(contentsOf: URL(fileURLWithPath: path))
+        if let before, let after, before != after {
+            registerTasksRestore(path: path, to: before, expecting: after,
+                                 undoManager: undoManager, actionName: actionName)
+        }
+        return items
+    }
+
+    private func registerTasksRestore(path: String, to target: Data, expecting: Data,
+                                      undoManager: UndoManager?, actionName: String) {
+        undoManager?.registerUndo(withTarget: self) { model in
+            MainActor.assumeIsolated {
+                model.applyTasksRestore(path: path, to: target, expecting: expecting,
+                                        undoManager: undoManager, actionName: actionName)
+            }
+        }
+        undoManager?.setActionName(actionName)
+    }
+
+    // Restore `target` only if the file still holds what the mutation produced
+    // (`expecting`) — otherwise an external edit happened since, and overwriting
+    // would clobber it. Re-registering the mirror gives redo for free.
+    private func applyTasksRestore(path: String, to target: Data, expecting: Data,
+                                   undoManager: UndoManager?, actionName: String) {
+        let current = try? Data(contentsOf: URL(fileURLWithPath: path))
+        guard current == expecting else {
+            taskMutationNotice = "tasks.md changed on disk — undo skipped to avoid losing edits."
+            refreshData(resetSelection: false)
+            return
+        }
+        guard (try? target.write(to: URL(fileURLWithPath: path), options: .atomic)) != nil else { return }
+        registerTasksRestore(path: path, to: expecting, expecting: target,
+                             undoManager: undoManager, actionName: actionName)
+        refreshData(resetSelection: false)   // flow the restore back to the view
+    }
+
     func currentFilePath() -> String? {
         func join(_ parts: String...) -> String {
             parts.dropFirst().reduce(parts.first ?? "") { ($0 as NSString).appendingPathComponent($1) }
