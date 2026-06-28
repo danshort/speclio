@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.21.0](https://github.com/danshort/lectern/compare/v0.20.1...v0.21.0) (2026-06-28)
+
+
+### Features
+
+* add in-app task editing to the macOS app ([#107](https://github.com/danshort/lectern/issues/107)) ([250364a](https://github.com/danshort/lectern/commit/250364a5bdd71fa7c4d7c620976a8341782db21c))
+
+
+### Bug Fixes
+
+* toggle the correct task and surface reload errors in the TUI ([#109](https://github.com/danshort/lectern/issues/109)) ([dcf7272](https://github.com/danshort/lectern/commit/dcf7272da0ef43c36d8f81cf67d406e12be0c933))
+
 ## [0.20.1](https://github.com/danshort/lectern/compare/v0.20.0...v0.20.1) (2026-06-27)
 
 
