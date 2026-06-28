@@ -38,7 +38,17 @@ const (
 	// unreadablePrefix begins the placeholder content of an artifact that exists
 	// but could not be read (its ReadErr is also set).
 	unreadablePrefix = "⚠ couldn't read "
+
+	// missingSpecPrefix begins the placeholder content of a spec capability
+	// directory that exists but contains no spec.md (its ReadErr is set to
+	// ErrNoSpecFile). Surfaced with a ⚠ rather than dropped/empty (#96).
+	missingSpecPrefix = "⚠ no spec.md in "
 )
+
+// ErrNoSpecFile marks a spec capability directory that exists but has no
+// spec.md. It is carried as an artifact's ReadErr so the directory is surfaced
+// with a ⚠ marker instead of being silently dropped or shown as empty (#96).
+var ErrNoSpecFile = errors.New("spec directory has no spec.md")
 
 // JSON tags on the domain types document the cross-language serialization
 // contract shared with the Swift port (snake_case field names). The error
@@ -186,7 +196,10 @@ func (l *Loader) LoadProjectSpecsFrom(root string) ([]ProjectSpec, error) {
 				}
 			}
 		case errors.Is(readErr, fs.ErrNotExist):
-			// spec dir without a spec.md — leave empty (unchanged behavior).
+			// spec dir without a spec.md — surface it with a ⚠ rather than
+			// listing it as silently empty (#96).
+			ps.ReadErr = ErrNoSpecFile
+			ps.Content = missingSpecPrefix + name
 		default:
 			ps.ReadErr = readErr
 			ps.Content = unreadablePrefix + specPath + ": " + readErr.Error()
@@ -350,7 +363,12 @@ func (l *Loader) loadSpecs(dir string) (Artifact, []NamedSpec) {
 			files = append(files, NamedSpec{Name: name, Content: content})
 			parts = append(parts, "# "+name+"\n\n"+content)
 		case errors.Is(readErr, fs.ErrNotExist):
-			// spec dir without a spec.md — skip (unchanged behavior).
+			// spec dir without a spec.md — surface it with a ⚠ rather than
+			// dropping it silently (#96). The placeholder names the capability
+			// (not a path) so the combined Specs content stays portable.
+			ph := missingSpecPrefix + name
+			files = append(files, NamedSpec{Name: name, Content: ph, ReadErr: ErrNoSpecFile})
+			parts = append(parts, "# "+name+"\n\n"+ph)
 		default:
 			ph := unreadablePrefix + specPath + ": " + readErr.Error()
 			files = append(files, NamedSpec{Name: name, Content: ph, ReadErr: readErr})

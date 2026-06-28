@@ -17,4 +17,9 @@ enum Layout {
     static let scenarioPrefix = "#### Scenario:"
 
     static let unreadablePrefix = "⚠ couldn't read "
+
+    // Placeholder prefix for a spec capability directory that exists but has no
+    // spec.md — surfaced with a ⚠ rather than dropped/empty (#96). Byte-
+    // identical to the Go loader's missingSpecPrefix (cross-language contract).
+    static let missingSpecPrefix = "⚠ no spec.md in "
 }

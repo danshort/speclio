@@ -174,6 +174,11 @@ func relPath(_ abs: String, _ root: String) -> String {
 
 func normContent(_ content: String, readError: Bool, root: String) -> String {
     if !readError { return content }
+    // A missing-spec.md placeholder is "<prefix><name>" with no error tail.
+    if content.hasPrefix(Layout_missingSpecPrefix) {
+        let rest = String(content.dropFirst(Layout_missingSpecPrefix.count))
+        return Layout_missingSpecPrefix + relPath(rest, root)
+    }
     var rest = content
     if rest.hasPrefix(Layout_unreadablePrefix) {
         rest = String(rest.dropFirst(Layout_unreadablePrefix.count))
@@ -186,6 +191,8 @@ func normContent(_ content: String, readError: Bool, root: String) -> String {
 
 // The unreadable-artifact placeholder prefix (Layout is internal to OpenSpecKit).
 let Layout_unreadablePrefix = "⚠ couldn't read "
+// The missing-spec.md placeholder prefix (#96), mirrored from Layout.
+let Layout_missingSpecPrefix = "⚠ no spec.md in "
 
 func normArtifact(_ a: Artifact, _ root: String) -> GArtifact {
     GArtifact(content: normContent(a.content, readError: a.readError, root: root),

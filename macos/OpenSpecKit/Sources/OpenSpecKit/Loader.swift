@@ -64,7 +64,10 @@ public struct Loader {
                     ps.requirementNames.append(trimSpace(String(line.dropFirst(Layout.reqPrefix.count))))
                 }
             } catch FSError.notFound {
-                // spec dir without a spec.md — leave empty (unchanged behavior).
+                // spec dir without a spec.md — surface it with a ⚠ rather than
+                // listing it as silently empty (#96).
+                ps.readError = true
+                ps.content = Layout.missingSpecPrefix + name
             } catch {
                 ps.readError = true
                 ps.content = Layout.unreadablePrefix + specPath + ": " + error.localizedDescription
@@ -160,7 +163,12 @@ public struct Loader {
                 files.append(NamedSpec(name: name, content: content))
                 parts.append("# " + name + "\n\n" + content)
             } catch FSError.notFound {
-                // spec dir without a spec.md — skip.
+                // spec dir without a spec.md — surface it with a ⚠ rather than
+                // dropping it silently (#96). The placeholder names the
+                // capability (not a path) so combined content stays portable.
+                let ph = Layout.missingSpecPrefix + name
+                files.append(NamedSpec(name: name, content: ph, readError: true))
+                parts.append("# " + name + "\n\n" + ph)
             } catch {
                 let ph = Layout.unreadablePrefix + specPath + ": " + error.localizedDescription
                 files.append(NamedSpec(name: name, content: ph, readError: true))
