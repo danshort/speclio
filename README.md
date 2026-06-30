@@ -79,10 +79,21 @@ directly — hover a task to reveal its controls:
   (`1.1`, `1.2`, …) renumber automatically; section prefixes (e.g. `3b`) are
   preserved.
 
+Every task change — toggle, edit, add, delete, reorder, move — is **undoable**
+with **⌘Z** (and **⌘⇧Z** to redo); the Edit menu names each action. Undo restores
+`tasks.md` to its exact prior bytes and is guarded so it won't clobber an edit
+made on disk in the meantime.
+
 Edits are written surgically and re-read just before saving, so a change made by
 an agent working the same file won't be clobbered; if the file moved underneath
 an edit, the app refreshes and tells you. Changes opened from **other worktrees**
 are read-only.
+
+**Opening artifacts in an editor.** Press **⌘E** (or use the toolbar flyout /
+File ▸ Open in Editor) to open the selected artifact externally. By default it
+uses the system handler for the file; in **Settings (⌘,) → Opening artifacts**
+you can pick a specific app to open artifacts with (and reset to the default).
+Other shortcuts: **⌘O** open a project, **⌘+/⌘-/⌘0** adjust content text size.
 
 Install via Homebrew (preview) — the app ships as a **cask** in the *same*
 `danshort/tap` as the CLI formula (one tap, two install targets):

@@ -114,3 +114,42 @@ rm "$(go env GOPATH)/bin/lectern"       # only if you ran `make install`
 
 The Homebrew copy is unaffected by any of the above; manage it with
 `brew upgrade lectern` / `brew uninstall lectern` as usual.
+
+## The macOS app
+
+The native reader lives under `macos/` as two SwiftPM packages (needs Xcode):
+
+- **`macos/OpenSpecKit`** — the domain layer: a Swift port of Go's
+  `internal/openspec` (loading, parsing, validation, task editing).
+- **`macos/LecternApp`** — the SwiftUI/AppKit app built on top of it.
+
+```bash
+cd macos/OpenSpecKit && swift test     # domain + golden tests
+cd macos/LecternApp  && swift build    # compile the app
+cd macos/LecternApp  && swift run      # run it (⌘O to choose a project folder)
+macos/LecternApp/scripts/package.sh 0.1.0   # → dist/Lectern.app + .zip
+```
+
+### The cross-language golden contract — read before touching the loader
+
+`internal/openspec` (Go) and `OpenSpecKit` (Swift) must produce **byte-identical**
+output for a shared corpus of fixtures under [`testdata/corpus/`](testdata/corpus/README.md).
+CI runs both toolchains against the committed `testdata/corpus/golden/` files, so
+a behavior change in **one** language without the other is a failing build.
+
+When you change loader/domain behavior:
+
+```bash
+# 1. change Go behavior, then regenerate the goldens and REVIEW the diff:
+go test ./internal/openspec/ -run TestGolden -update
+# 2. mirror the same behavior in macos/OpenSpecKit (same logic, same strings), then:
+cd macos/OpenSpecKit && swift test          # must reproduce the new goldens
+```
+
+Keep placeholder/diagnostic strings **path-free** (name the capability, not an
+absolute path) so goldens stay portable across machines and languages — the test
+normalizer only scrubs paths inside known prefixes. Add or extend a corpus
+fixture whenever you add a behavior worth pinning.
+
+CI for the app runs in the `swift` job: `swift build`, `swift run oskgolden`
+(the executable golden byte-check), then `swift test`.

@@ -2,19 +2,19 @@
 
 A committed corpus of OpenSpec project fixtures plus **golden output** that every
 implementation of the domain layer — the Go `internal/openspec` package and the
-planned Swift `OpenSpecKit` port — must reproduce exactly. It is the single
-source of truth for *expected loader behavior*, run in CI on both toolchains so a
-one-sided behavior change is a failing build, not a latent drift.
+Swift `OpenSpecKit` port (`macos/OpenSpecKit`) — must reproduce exactly. It is the
+single source of truth for *expected loader behavior*, run in CI on both
+toolchains so a one-sided behavior change is a failing build, not a latent drift.
 
-This is Phase 1 of the macOS-app change (`openspec/changes/macos-app/`). It is
-useful on its own: it hardens the existing Go loader regardless of whether the
-Swift app is ever built.
+Both implementations now ship, so this corpus is a live guardrail: a loader
+behavior change in one language fails CI unless the other language and the
+goldens are updated to match.
 
 ## Layout
 
 | Fixture | Pins |
 |---|---|
-| `basic-project/` | change sort (desc `Created`, empty last, stable), `loadSpecs` ordering (≥3 spec dirs), artifact presence |
+| `basic-project/` | change sort (desc `Created`, empty last, stable), `loadSpecs` ordering (≥3 spec dirs), artifact presence; a spec dir with no `spec.md` (`empty-capability`, and the `alpha-change/specs/empty-delta` delta dir) is surfaced with a ⚠ placeholder, not dropped/empty |
 | `lf-tasks/`, `crlf-tasks/` | `ParseTasks` line numbers; byte-exact toggle write (LF + CRLF preserved) |
 | `unreadable-artifact/` | present-but-unreadable artifact (read fault injected in the test; see below) |
 | `malformed-archive-name/` | archive date gate — regex match **and** calendar validity (`2026-13-99`, `2026-02-29` rejected; `2024-02-29` accepted; `plain-name` → no date) |
