@@ -123,23 +123,3 @@ don't guess).
   next" — it travels across machines/accounts; local agent memory does not.
 - `openspec/specs/` is the living spec of current behavior; archived changes
   under `openspec/changes/archive/` are the development history.
-
-## Current state / picking up where we left off (2026-06-30)
-
-Recently shipped (all merged to `main`): macOS editor override + ⌘E (#110);
-undo/redo for all macOS task mutations via byte-exact file snapshots (#103);
-FSEvents-driven worktree progress (#98); the render-cache archive cleanup (#82);
-and "warn-don't-skip a spec dir with no spec.md" across both loaders + golden
-corpus (#96). No active (un-archived) OpenSpec changes remain.
-
-Open backlog (see GitHub for current priority):
-- **#102** macOS VoiceOver / accessibility — self-contained, a good next pick.
-- **#100** expand macOS Preferences (partly chipped by #110/#103).
-- **#111** TUI in-app settings screen.
-- **#104** *Operate* the OpenSpec lifecycle (TUI + macOS), not just view it — the
-  flagship, **large**; start with `/opsx:explore` before any code.
-- **#77** macOS window tab groups across relaunch.
-- **#67** Notarize the macOS app — **blocked on an Apple Developer account.**
-
-There is a standing queue of **manual GUI QA** for recent macOS merges that only
-the user can run (live worktree update, undo behaviors, editor override).
